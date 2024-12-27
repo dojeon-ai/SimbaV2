@@ -319,3 +319,34 @@ def normalize_score_with_random_and_base_score(
     df_normalized["value"] = df_normalized.apply(normalize_value, axis=1)
 
     return df_normalized
+
+
+def normalize_values(df, TASK_SUCCESS_SCORE):
+    """
+    Normalize the 'value' column in the DataFrame based on the TASK_SUCCESS_SCORE.
+
+    Args:
+    - df (pandas.DataFrame): Input DataFrame with columns 'env_name' and 'value'
+
+    Returns:
+    - pandas.DataFrame: DataFrame with normalized 'value' column
+    """
+    # Create a copy of the DataFrame to avoid modifying the original
+    df_normalized = df.copy()
+
+    # Define a function to normalize a single value
+    def normalize_value(row):
+        env_name = row["env_name"]
+        value = row["value"]
+        if env_name in TASK_SUCCESS_SCORE:
+            return value / TASK_SUCCESS_SCORE[env_name] * 1000
+        else:
+            print(
+                f"Warning: No normalization score found for environment '{env_name}'. Returning original value."
+            )
+            raise NotImplementedError
+
+    # Apply the normalization function to each row
+    df_normalized["value"] = df_normalized.apply(normalize_value, axis=1)
+
+    return df_normalized
