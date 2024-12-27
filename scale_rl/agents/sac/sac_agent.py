@@ -37,6 +37,7 @@ class SACConfig:
     num_train_envs: int
     max_episode_steps: int
     normalize_observation: bool
+    normalize_reward: bool
 
     actor_block_type: str
     actor_num_blocks: int

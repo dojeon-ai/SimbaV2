@@ -13,7 +13,6 @@ class RandomAgent(BaseAgent):
         self,
         observation_space: gym.spaces.Space,
         action_space: gym.spaces.Space,
-        max_episode_steps: int,
         cfg: Config,
     ):
         """
@@ -23,7 +22,6 @@ class RandomAgent(BaseAgent):
         super(RandomAgent, self).__init__(
             observation_space,
             action_space,
-            max_episode_steps,
             cfg,
         )
 
@@ -38,7 +36,7 @@ class RandomAgent(BaseAgent):
         for _ in range(num_envs):
             actions.append(self._action_space.sample())
 
-        actions = np.stack(actions)
+        actions = np.stack(actions).reshape(-1)
         return actions
 
     def update(self, update_step: int, batch: Dict[str, np.ndarray]) -> Dict:

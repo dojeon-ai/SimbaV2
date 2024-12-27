@@ -5,4 +5,5 @@
 agent_type: 'random'
 
 seed: ${seed}
-normalize_observation: False
+normalize_observation: false
+normalize_reward: false

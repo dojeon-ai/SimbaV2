@@ -53,7 +53,10 @@ def evaluate(
                 for idx in range(n):
                     final_info = infos["final_info"][idx]
                     if "success" in final_info:
-                        final_successes[idx] = final_info["success"].astype("float")
+                        try:
+                            final_successes[idx] = final_info["success"].astype("float")
+                        except:
+                            final_successes[idx] = np.array(final_info["success"]).astype("float")
                 successes += final_successes * (1 - dones)
 
             else:
