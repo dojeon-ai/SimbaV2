@@ -22,6 +22,8 @@ actor_input_process_type: 'concat_norm_linear_norm'
 actor_input_projection_type: 'shift'
 actor_input_projection_constant: 3.0
 actor_scale_input_dense: true
+actor_scaler_init: ${eval:'1 / math.sqrt(${agent.actor_hidden_dim})'}
+actor_scaler_scale: ${eval:'1 / math.sqrt(${agent.actor_hidden_dim})'}
 actor_alpha_init: ${eval:'1 / (${agent.actor_num_blocks} + 1)'}
 actor_alpha_scale: ${eval:'1 / math.sqrt(${agent.actor_hidden_dim})'}
 actor_output_separate_mean_std: true
@@ -43,6 +45,8 @@ critic_input_process_type: 'concat_norm_linear_norm'
 critic_input_projection_type: 'shift'
 critic_input_projection_constant: 3.0
 critic_scale_input_dense: true
+critic_scaler_init: ${eval:'1 / math.sqrt(${agent.critic_hidden_dim})'}
+critic_scaler_scale: ${eval:'1 / math.sqrt(${agent.critic_hidden_dim})'}
 critic_alpha_init: ${eval:'1 / (${agent.critic_num_blocks} + 1)'}
 critic_alpha_scale: ${eval:'1 / math.sqrt(${agent.critic_hidden_dim})'}
 critic_output_project_in: true
@@ -63,7 +67,7 @@ temp_initial_value: 0.01
 temp_learning_rate: 1e-4
 temp_weight_decay: 0.0
 
-target_copy_type: 'hard' # [hard, soft]
+target_copy_type: 'soft' # [hard, soft]
 target_copy_every: 250
 target_tau: 0.005 # soft
 target_normalize_weight: false

@@ -6,7 +6,7 @@ import jax.numpy as jnp
 
 from scale_rl.buffers import Batch
 from scale_rl.networks.critics import (
-    compute_categorical_bin_values,
+    compute_categorical_value,
     compute_categorical_loss,
 )
 from scale_rl.networks.projection_utils import l2normalize
@@ -81,13 +81,6 @@ def update_actor(
     return actor, info
 
 
-def _compute_categorical_value(
-    log_probs: jnp.ndarray, num_bins: int, min_v: float, max_v: float
-) -> jnp.ndarray:
-    bin_values = compute_categorical_bin_values(num_bins, min_v, max_v)
-    return jnp.sum(jnp.exp(log_probs) * bin_values, axis=1, keepdims=True)
-
-
 def update_actor_with_categorical_critic(
     key: PRNGKey,
     actor: Trainer,
@@ -96,8 +89,11 @@ def update_actor_with_categorical_critic(
     batch: Batch,
     min_v: float,
     max_v: float,
+    num_bins: int,
     critic_use_cdq: bool,
 ) -> Tuple[Trainer, Dict[str, float]]:
+    bin_values = jnp.linspace(min_v, max_v, num_bins)
+
     def actor_loss_fn(
         actor_params: flax.core.FrozenDict[str, Any],
     ) -> Tuple[jnp.ndarray, Dict[str, float]]:
@@ -112,17 +108,15 @@ def update_actor_with_categorical_critic(
             (q_log_probs_1, q_log_probs_2), _ = critic(
                 observations=batch["observation"], actions=actions
             )
-            _, num_bins = q_log_probs_1.shape
-            q1 = _compute_categorical_value(q_log_probs_1, num_bins, min_v, max_v)
-            q2 = _compute_categorical_value(q_log_probs_2, num_bins, min_v, max_v)
+            q1 = compute_categorical_value(q_log_probs_1, bin_values)
+            q2 = compute_categorical_value(q_log_probs_2, bin_values)
             q = jnp.minimum(q1, q2).reshape(-1)  # (n, 1) -> (n, )
         else:
             q_log_probs, _ = critic(
                 observations=batch["observation"],
                 actions=actions,
             )
-            _, num_bins = q_log_probs.shape
-            q = _compute_categorical_value(q_log_probs, num_bins, min_v, max_v)
+            q = compute_categorical_value(q_log_probs, bin_values)
 
         actor_loss = (log_probs * temperature() - q).mean()
         actor_info = {
@@ -242,6 +236,7 @@ def update_categorical_critic(
     n_step: int,
     min_v: float,
     max_v: float,
+    num_bins: int,
     critic_use_cdq: bool,
 ) -> Tuple[Trainer, Dict[str, float]]:
     # compute the target q-value
@@ -249,13 +244,14 @@ def update_categorical_critic(
     next_actions = next_dist.sample(seed=key)
     next_log_probs = next_dist.log_prob(next_actions)
 
+    bin_values = jnp.linspace(min_v, max_v, num_bins)
     if critic_use_cdq:
         (next_q_log_probs_1, next_q_log_probs_2), _ = target_critic(
             observations=batch["next_observation"], actions=next_actions
         )
         _, num_bins = next_q_log_probs_1.shape
-        next_q1 = _compute_categorical_value(next_q_log_probs_1, num_bins, min_v, max_v)
-        next_q2 = _compute_categorical_value(next_q_log_probs_2, num_bins, min_v, max_v)
+        next_q1 = compute_categorical_value(next_q_log_probs_1, bin_values)
+        next_q2 = compute_categorical_value(next_q_log_probs_2, bin_values)
         min_indices = jnp.concat([next_q1, next_q2], axis=1).argmin(axis=1)
         stacked_log_probs = jnp.stack([next_q_log_probs_1, next_q_log_probs_2], axis=1)
         next_q_log_probs = jax.vmap(lambda a, b: a[b])(stacked_log_probs, min_indices)
@@ -284,6 +280,8 @@ def update_categorical_critic(
                 done=batch["terminated"].reshape((-1, 1)),
                 target_log_probs=next_q_log_probs,
                 entropy=(temperature() * next_log_probs).reshape((-1, 1)),
+                bin_values=bin_values,
+                num_bins=num_bins,
                 min_v=min_v,
                 max_v=max_v,
             )
@@ -294,6 +292,8 @@ def update_categorical_critic(
                 done=batch["terminated"].reshape((-1, 1)),
                 target_log_probs=next_q_log_probs,
                 entropy=(temperature() * next_log_probs).reshape((-1, 1)),
+                bin_values=bin_values,
+                num_bins=num_bins,
                 min_v=min_v,
                 max_v=max_v,
             )
@@ -313,21 +313,30 @@ def update_categorical_critic(
                 done=batch["terminated"].reshape((-1, 1)),
                 target_log_probs=next_q_log_probs,
                 entropy=(temperature() * next_log_probs).reshape((-1, 1)),
+                bin_values=bin_values,
+                num_bins=num_bins,
                 min_v=min_v,
                 max_v=max_v,
             )
 
             # compute mse loss
             critic_loss = loss.mean()
-        
-        #pred_q = _compute_categorical_value(pred_log_probs, num_bins, min_v, max_v)
-        #target_q = _compute_categorical_value(next_q_log_probs, num_bins, min_v, max_v)
+
+        # for logging
+        #pred_q = compute_categorical_value(
+        #    log_probs=jax.lax.stop_gradient(pred_log_probs), 
+        #    bin_values=bin_values
+        #)
+        #target_q = compute_categorical_value(
+        #    log_probs=jax.lax.stop_gradient(next_q_log_probs), 
+        #    bin_values=bin_values
+        #)
 
         critic_info = {
             "critic/loss": critic_loss,
-            #"critic/q_min": pred_q.min(),
-            #"critic/q_mean": pred_q.mean(),
-            #"critic/q_max": pred_q.max(),
+           # "critic/q_min": pred_q.min(),
+           # "critic/q_mean": pred_q.mean(),
+           # "critic/q_max": pred_q.max(),
             "critic/batch_rew_min": batch["reward"].min(),
             "critic/batch_rew_mean": batch["reward"].mean(),
             "critic/batch_rew_max": batch["reward"].max(),

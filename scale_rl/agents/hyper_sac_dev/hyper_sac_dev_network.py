@@ -67,6 +67,8 @@ class HyperDense(nn.Module):
 class HyperFeedForward(nn.Module):
     hidden_dim: int
     out_dim: int
+    scaler_init: float
+    scaler_scale: float
     dtype: Any
     eps: float = 1e-8
 
@@ -74,7 +76,8 @@ class HyperFeedForward(nn.Module):
         self.w1 = HyperDense(
             self.hidden_dim, 
             use_scaler=True, 
-            scaler_init=1/math.sqrt(self.hidden_dim),
+            scaler_init=self.scaler_init,
+            scaler_scale=self.scaler_scale,            
             dtype=self.dtype
         )
         self.w2 = HyperDense(
@@ -95,16 +98,24 @@ class HyperFeedForward(nn.Module):
 
 class HyperResidualBlock(nn.Module):
     hidden_dim: int
+    scaler_init: float
+    scaler_scale: float
     alpha_init: float
     alpha_scale: float
     dtype: Any
 
     def setup(self):
         self.ff = HyperFeedForward(
-            hidden_dim=self.hidden_dim * 4, out_dim=self.hidden_dim, dtype=self.dtype
+            hidden_dim=self.hidden_dim * 4, 
+            out_dim=self.hidden_dim, 
+            scaler_init=self.scaler_init,
+            scaler_scale=self.scaler_scale,
+            dtype=self.dtype
         )
         self.scaler = Scale(
-            self.hidden_dim, init=self.alpha_init, scale=self.alpha_scale
+            self.hidden_dim, 
+            init=self.alpha_init, 
+            scale=self.alpha_scale,
         )
 
     def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
@@ -122,6 +133,8 @@ class HyperEncoder(nn.Module):
     input_projection_type: str
     input_projection_constant: float
     scale_input_dense: bool
+    scaler_init: float
+    scaler_scale: float
     alpha_init: float
     alpha_scale: float
     dtype: Any
@@ -194,6 +207,8 @@ class HyperEncoder(nn.Module):
         for _ in range(self.num_blocks):
             x = HyperResidualBlock(
                 hidden_dim=self.hidden_dim,
+                scaler_init=self.scaler_init,
+                scaler_scale=self.scaler_scale,
                 alpha_init=self.alpha_init,
                 alpha_scale=self.alpha_scale,
                 dtype=self.dtype,
@@ -215,7 +230,7 @@ class HyperNormalTanhPolicy(nn.Module):
     project_in: bool = True
     hidden_dim: int = 128
     use_scaler: bool = True
-    non_linear: bool = True
+    non_linear: bool = False
     use_bias: bool = True
 
     @nn.compact
@@ -308,49 +323,7 @@ class HyperCritic(nn.Module):
     project_in: bool = True
     hidden_dim: int = 512
     use_scaler: bool = True
-    non_linear: bool = True
-    use_bias: bool = True
-
-    @nn.compact
-    def __call__(
-        self,
-        inputs: jnp.ndarray,
-    ) -> jnp.ndarray:
-        value = inputs
-        if self.project_in:
-            value = HyperDense(
-                hidden_dim=self.hidden_dim,
-                dtype=self.dtype,
-                use_scaler=False,
-            )(value)
-
-        if self.use_scaler:
-            value = Scale(self.hidden_dim)(value)
-
-        if self.non_linear:
-            value = nn.relu(value)
-
-        value = HyperDense(
-            hidden_dim=1,
-            dtype=self.dtype,
-            use_scaler=False,
-        )(value)
-
-        if self.use_bias:
-            bias = self.param("value_bias", nn.initializers.zeros, (1,))
-            value = value + bias
-
-        return value
-
-
-class HyperCritic(nn.Module):
-    kernel_init_scale: float = 1.0
-    dtype: Any = jnp.float32
-
-    project_in: bool = True
-    hidden_dim: int = 512
-    use_scaler: bool = True
-    non_linear: bool = True
+    non_linear: bool = False
     use_bias: bool = True
 
     @nn.compact
@@ -438,6 +411,8 @@ class HyperSACDevActor(nn.Module):
     input_projection_type: str
     input_projection_constant: float
     scale_input_dense: bool
+    scaler_init: float
+    scaler_scale: float
     alpha_init: float
     alpha_scale: float
     dtype: Any
@@ -457,6 +432,8 @@ class HyperSACDevActor(nn.Module):
             input_projection_type=self.input_projection_type,
             input_projection_constant=self.input_projection_constant,
             scale_input_dense=self.scale_input_dense,
+            scaler_init=self.scaler_init,
+            scaler_scale=self.scaler_scale,
             alpha_init=self.alpha_init,
             alpha_scale=self.alpha_scale,
             dtype=self.dtype,
@@ -481,6 +458,7 @@ class HyperSACDevActor(nn.Module):
         observations = convert_element_type(observations, self.dtype)
         z, info = self.encoder(observations)
         dist = self.predictor(z, temperature)
+
         return dist, info
 
 
@@ -491,6 +469,8 @@ class HyperSACDevCritic(nn.Module):
     input_projection_type: str
     input_projection_constant: float
     scale_input_dense: bool
+    scaler_init: float
+    scaler_scale: float
     alpha_init: float
     alpha_scale: float
     dtype: Any
@@ -518,6 +498,8 @@ class HyperSACDevCritic(nn.Module):
             dtype=self.dtype,
             project_in=self.output_project_in,
             hidden_dim=self.output_hidden_dim,
+            scaler_init=self.scaler_init,
+            scaler_scale=self.scaler_scale,
             use_scaler=self.output_use_scaler,
             non_linear=self.output_non_linear,
             use_bias=self.output_use_bias,
@@ -547,6 +529,8 @@ class HyperSACDevClippedDoubleCritic(nn.Module):
     input_projection_type: str
     input_projection_constant: float
     scale_input_dense: bool
+    scaler_init: float
+    scaler_scale: float
     alpha_init: float
     alpha_scale: float
     dtype: Any
@@ -581,6 +565,8 @@ class HyperSACDevClippedDoubleCritic(nn.Module):
             input_projection_type=self.input_projection_type,
             input_projection_constant=self.input_projection_constant,
             scale_input_dense=self.scale_input_dense,
+            scaler_init=self.scaler_init,
+            scaler_scale=self.scaler_scale,
             alpha_init=self.alpha_init,
             alpha_scale=self.alpha_scale,
             dtype=self.dtype,
@@ -601,6 +587,8 @@ class HyperSACDevCategoricalCritic(nn.Module):
     input_projection_type: str
     input_projection_constant: float
     scale_input_dense: bool
+    scaler_init: float
+    scaler_scale: float
     alpha_init: float
     alpha_scale: float
     dtype: Any
@@ -621,6 +609,8 @@ class HyperSACDevCategoricalCritic(nn.Module):
             input_projection_type=self.input_projection_type,
             input_projection_constant=self.input_projection_constant,
             scale_input_dense=self.scale_input_dense,
+            scaler_init=self.scaler_init,
+            scaler_scale=self.scaler_scale,
             alpha_init=self.alpha_init,
             alpha_scale=self.alpha_scale,
             dtype=self.dtype,
@@ -660,6 +650,8 @@ class HyperSACDevCategoricalDoubleCritic(nn.Module):
     input_projection_type: str
     input_projection_constant: float
     scale_input_dense: bool
+    scaler_init: float
+    scaler_scale: float
     alpha_init: float
     alpha_scale: float
     dtype: Any
@@ -696,6 +688,8 @@ class HyperSACDevCategoricalDoubleCritic(nn.Module):
             input_projection_type=self.input_projection_type,
             input_projection_constant=self.input_projection_constant,
             scale_input_dense=self.scale_input_dense,
+            scaler_init=self.scaler_init,
+            scaler_scale=self.scaler_scale,
             alpha_init=self.alpha_init,
             alpha_scale=self.alpha_scale,
             dtype=self.dtype,

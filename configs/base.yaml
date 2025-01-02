@@ -35,4 +35,4 @@ defaults:
 - _self_
 - agent: sac_simba
 - buffer: numpy_uniform
-- env: dmc_hard
+- env: dmc_em

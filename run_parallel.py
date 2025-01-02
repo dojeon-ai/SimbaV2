@@ -121,6 +121,14 @@ if __name__ == "__main__":
             + ["myosuite"] * len(MYOSUITE_TASKS)
         )
 
+    elif env_type == "mujoco_dmc_em_dmc_hard":
+        envs = MUJOCO_ALL + DMC_EASY_MEDIUM + DMC_HARD
+        env_configs = (
+            ["mujoco"] * len(MUJOCO_ALL)
+            + ["dmc_em"] * len(DMC_EASY_MEDIUM)
+            + ["dmc_hard"] * len(DMC_HARD)
+        )
+
     elif env_type == "mini_benchmark":
         mujoco_envs = [
             "HalfCheetah-v4",
@@ -129,13 +137,9 @@ if __name__ == "__main__":
 
         dmc_em_envs = [
             "acrobot-swingup",
-            "cartpole-balance",
             "cartpole-swingup_sparse",
             "cheetah-run",
             "finger-spin",
-            "fish-swim",
-            "quadruped-run",
-            "walker-run",
         ]
 
         dmc_hard_envs = [
@@ -147,7 +151,6 @@ if __name__ == "__main__":
 
         myo_envs = [
             "myo-key-turn-hard",
-            "myo-obj-hold-hard",
             "myo-pen-twirl-hard",
         ]
 

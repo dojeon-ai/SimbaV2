@@ -1,10 +1,10 @@
 python run_parallel.py \
     --group_name test \
     --exp_name test \
-    --agent_config hyper_sac_dev \
+    --agent_config hyper_sac \
     --env_type mini_benchmark \
     --device_ids 0 \
     --num_seeds 1 \
     --num_exp_per_device 1 \
     --overrides updates_per_interaction_step=2 \
-    --overrides agent.normalized_g_max=10.0 \
+    --overrides agent.target_critic_copy_every=250 \

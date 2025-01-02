@@ -1,6 +1,6 @@
 import functools
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Tuple
 
 import gymnasium as gym
 import jax
@@ -12,8 +12,8 @@ from flax.training import dynamic_scale
 from scale_rl.agents.base_agent import BaseAgent
 from scale_rl.agents.hyper_sac.hyper_sac_network import (
     HyperSACActor,
-    HyperSACClippedDoubleCritic,
     HyperSACCritic,
+    HyperSACDoubleCritic,
     HyperSACTemperature,
 )
 from scale_rl.agents.hyper_sac.hyper_sac_update import (
@@ -38,43 +38,40 @@ class HyperSACConfig:
     num_train_envs: int
     max_episode_steps: int
     normalize_observation: bool
+    normalize_reward: bool
+    normalized_g_max: float
+
+    learning_rate_init: float
+    learning_rate_end: float
+    learning_rate_decay_rate: float
+    learning_rate_decay_step: int
 
     actor_num_blocks: int
     actor_hidden_dim: int
-    actor_learning_rate_init: float
-    actor_learning_rate_end: float
-    actor_learning_rate_decay_rate: float
-    actor_learning_rate_decay_step: int
-    actor_input_projection_type: str
-    actor_input_projection_constant: float
+    actor_scaler_init: float
+    actor_scaler_scale: float    
     actor_alpha_init: float
     actor_alpha_scale: float
-    actor_output_hidden_dim: int
 
+    critic_use_cdq: bool
     critic_num_blocks: int
     critic_hidden_dim: int
-    critic_learning_rate_init: float
-    critic_learning_rate_end: float
-    critic_learning_rate_decay_rate: float
-    critic_learning_rate_decay_step: int
-    critic_use_cdq: bool
-    critic_input_projection_type: str
-    critic_input_projection_constant: float
+    critic_num_bins: int
+    critic_min_v: float
+    critic_max_v: float
+    critic_scaler_init: float
+    critic_scaler_scale: float
     critic_alpha_init: float
     critic_alpha_scale: float
-    critic_output_hidden_dim: int
+    
+    target_tau: float
 
+    temp_initial_value: float
     temp_target_entropy: float
     temp_target_entropy_coef: float
-    temp_initial_value: float
-    temp_learning_rate: float
-
-    target_tau: float
-    target_normalize_weight: bool
+    
     gamma: float
     n_step: int
-
-    mixed_precision: bool
 
 
 @functools.partial(
@@ -95,53 +92,54 @@ def _init_hyper_sac_networks(
 
     rng = jax.random.PRNGKey(cfg.seed)
     rng, actor_key, critic_key, temp_key = jax.random.split(rng, 4)
-    compute_dtype = jnp.float16 if cfg.mixed_precision else jnp.float32
+    compute_dtype = jnp.float32
 
     # When initializing the network in the flax.nn.Module class, rng_key should be passed as rngs.
     actor = Trainer.create(
         network_def=HyperSACActor(
             num_blocks=cfg.actor_num_blocks,
             hidden_dim=cfg.actor_hidden_dim,
-            action_dim=action_dim,
-            input_projection_type=cfg.actor_input_projection_type,
-            input_projection_constant=cfg.actor_input_projection_constant,
+            scaler_init=cfg.actor_scaler_init,
+            scaler_scale=cfg.actor_scaler_scale,
             alpha_init=cfg.actor_alpha_init,
             alpha_scale=cfg.actor_alpha_scale,
-            output_hidden_dim=cfg.actor_output_hidden_dim,
+            action_dim=action_dim,
             dtype=compute_dtype,
         ),
         network_inputs={"rngs": actor_key, "observations": fake_observations},
-        tx=optax.adamw(
+        tx=optax.adam(
             learning_rate=optax.linear_schedule(
-                init_value=cfg.actor_learning_rate_init,
-                end_value=cfg.actor_learning_rate_end,
-                transition_steps=cfg.actor_learning_rate_decay_step,
+                init_value=cfg.learning_rate_init,
+                end_value=cfg.learning_rate_end,
+                transition_steps=cfg.learning_rate_decay_step,
             ),
-            weight_decay=0.0,
         ),
-        dynamic_scale=dynamic_scale.DynamicScale() if cfg.mixed_precision else None,
     )
 
     if cfg.critic_use_cdq:
-        critic_network_def = HyperSACClippedDoubleCritic(
+        critic_network_def = HyperSACDoubleCritic(
             num_blocks=cfg.critic_num_blocks,
             hidden_dim=cfg.critic_hidden_dim,
-            input_projection_type=cfg.critic_input_projection_type,
-            input_projection_constant=cfg.critic_input_projection_constant,
+            min_v=cfg.critic_min_v,
+            max_v=cfg.critic_max_v,
+            num_bins=cfg.critic_num_bins,
+            scaler_init=cfg.critic_scaler_init,
+            scaler_scale=cfg.critic_scaler_scale,
             alpha_init=cfg.critic_alpha_init,
             alpha_scale=cfg.critic_alpha_scale,
-            output_hidden_dim=cfg.critic_output_hidden_dim,
             dtype=compute_dtype,
         )
     else:
         critic_network_def = HyperSACCritic(
             num_blocks=cfg.critic_num_blocks,
             hidden_dim=cfg.critic_hidden_dim,
-            input_projection_type=cfg.critic_input_projection_type,
-            input_projection_constant=cfg.critic_input_projection_constant,
+            min_v=cfg.critic_min_v,
+            max_v=cfg.critic_max_v,
+            num_bins=cfg.critic_num_bins,
+            scaler_init=cfg.critic_scaler_init,
+            scaler_scale=cfg.critic_scaler_scale,
             alpha_init=cfg.critic_alpha_init,
             alpha_scale=cfg.critic_alpha_scale,
-            output_hidden_dim=cfg.critic_output_hidden_dim,
             dtype=compute_dtype,
         )
 
@@ -152,15 +150,13 @@ def _init_hyper_sac_networks(
             "observations": fake_observations,
             "actions": fake_actions,
         },
-        tx=optax.adamw(
+        tx=optax.adam(
             learning_rate=optax.linear_schedule(
-                init_value=cfg.critic_learning_rate_init,
-                end_value=cfg.critic_learning_rate_end,
-                transition_steps=cfg.critic_learning_rate_decay_step,
+                init_value=cfg.learning_rate_init,
+                end_value=cfg.learning_rate_end,
+                transition_steps=cfg.learning_rate_decay_step,
             ),
-            weight_decay=0.0,
         ),
-        dynamic_scale=dynamic_scale.DynamicScale() if cfg.mixed_precision else None,
     )
 
     # we set target critic's parameters identical to critic by using same rng.
@@ -175,14 +171,24 @@ def _init_hyper_sac_networks(
         tx=None,
     )
 
+    bin_values = jnp.linspace(
+        cfg.critic_min_v, 
+        cfg.critic_max_v, 
+        cfg.critic_num_bins, 
+        dtype=compute_dtype,
+    ).reshape(1, -1)
+
     temperature = Trainer.create(
         network_def=HyperSACTemperature(cfg.temp_initial_value),
         network_inputs={
             "rngs": temp_key,
         },
-        tx=optax.adamw(
-            learning_rate=cfg.temp_learning_rate,
-            weight_decay=0.0,
+        tx=optax.adam(
+            learning_rate=optax.linear_schedule(
+                init_value=cfg.learning_rate_init,
+                end_value=cfg.learning_rate_end,
+                transition_steps=cfg.learning_rate_decay_step,
+            ),
         ),
     )
 
@@ -191,7 +197,7 @@ def _init_hyper_sac_networks(
     critic = l2normalize_network(critic)
     target_critic = l2normalize_network(target_critic)
 
-    return rng, actor, critic, target_critic, temperature
+    return rng, actor, critic, target_critic, bin_values, temperature
 
 
 @jax.jit
@@ -202,9 +208,8 @@ def _sample_hyper_sac_actions(
     temperature: float = 1.0,
 ) -> Tuple[PRNGKey, jnp.ndarray]:
     rng, key = jax.random.split(rng)
-    dist = actor(observations=observations, temperature=temperature)
+    dist, _ = actor(observations=observations, temperature=temperature)
     actions = dist.sample(seed=key)
-    actions = jnp.clip(actions, -1.0, 1.0)
 
     return rng, actions
 
@@ -215,8 +220,10 @@ def _sample_hyper_sac_actions(
         "gamma",
         "n_step",
         "critic_use_cdq",
+        "critic_min_v",
+        "critic_max_v",
+        "critic_num_bins",
         "target_tau",
-        "target_normalize_weight",
         "temp_target_entropy",
     ),
 )
@@ -230,8 +237,11 @@ def _update_hyper_sac_networks(
     gamma: float,
     n_step: int,
     critic_use_cdq: bool,
+    critic_min_v: float,
+    critic_max_v: float,
+    critic_num_bins: int,
+    critic_bin_values: jnp.ndarray,
     target_tau: float,
-    target_normalize_weight: bool,
     temp_target_entropy: float,
 ) -> Tuple[PRNGKey, Trainer, Trainer, Trainer, Trainer, Dict[str, float]]:
     rng, actor_key, critic_key = jax.random.split(rng, 3)
@@ -243,11 +253,12 @@ def _update_hyper_sac_networks(
         temperature=temperature,
         batch=batch,
         critic_use_cdq=critic_use_cdq,
+        bin_values=critic_bin_values,
     )
 
     new_temperature, temperature_info = update_temperature(
         temperature=temperature,
-        entropy=actor_info["entropy"],
+        entropy=actor_info["actor/entropy"],
         target_entropy=temp_target_entropy,
     )
 
@@ -258,16 +269,19 @@ def _update_hyper_sac_networks(
         target_critic=target_critic,
         temperature=new_temperature,
         batch=batch,
+        critic_use_cdq=critic_use_cdq,
+        min_v=critic_min_v,
+        max_v=critic_max_v,
+        num_bins=critic_num_bins,
+        bin_values=critic_bin_values,
         gamma=gamma,
         n_step=n_step,
-        critic_use_cdq=critic_use_cdq,
     )
 
     new_target_critic, target_critic_info = update_target_network(
         network=new_critic,
         target_network=target_critic,
         target_tau=target_tau,
-        normalize_weight=target_normalize_weight,
     )
 
     info = {
@@ -314,6 +328,7 @@ class HyperSACAgent(BaseAgent):
             self._actor,
             self._critic,
             self._target_critic,
+            self._bin_values,
             self._temperature,
         ) = _init_hyper_sac_networks(self._observation_dim, self._action_dim, self._cfg)
 
@@ -359,8 +374,11 @@ class HyperSACAgent(BaseAgent):
             gamma=self._cfg.gamma,
             n_step=self._cfg.n_step,
             critic_use_cdq=self._cfg.critic_use_cdq,
+            critic_min_v=self._cfg.critic_min_v,
+            critic_max_v=self._cfg.critic_max_v,
+            critic_num_bins=self._cfg.critic_num_bins,
+            critic_bin_values=self._bin_values,
             target_tau=self._cfg.target_tau,
-            target_normalize_weight=self._cfg.target_normalize_weight,
             temp_target_entropy=self._cfg.temp_target_entropy,
         )
 

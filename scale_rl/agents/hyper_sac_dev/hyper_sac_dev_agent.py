@@ -64,6 +64,8 @@ class HyperSACDevConfig:
     actor_input_projection_type: str
     actor_input_projection_constant: float
     actor_scale_input_dense: bool
+    actor_scaler_init: float
+    actor_scaler_scale: float
     actor_alpha_init: float
     actor_alpha_scale: float
     actor_output_separate_mean_std: bool
@@ -85,6 +87,8 @@ class HyperSACDevConfig:
     critic_input_projection_type: str
     critic_input_projection_constant: float
     critic_scale_input_dense: bool
+    critic_scaler_init: float
+    critic_scaler_scale: float
     critic_alpha_init: float
     critic_alpha_scale: float
     critic_output_project_in: bool
@@ -144,6 +148,8 @@ def _init_hyper_sac_dev_networks(
             input_projection_type=cfg.actor_input_projection_type,
             input_projection_constant=cfg.actor_input_projection_constant,
             scale_input_dense=cfg.actor_scale_input_dense,
+            scaler_init=cfg.actor_scaler_init,
+            scaler_scale=cfg.actor_scaler_scale,
             alpha_init=cfg.actor_alpha_init,
             alpha_scale=cfg.actor_alpha_scale,
             dtype=compute_dtype,
@@ -175,6 +181,8 @@ def _init_hyper_sac_dev_networks(
                 input_projection_type=cfg.critic_input_projection_type,
                 input_projection_constant=cfg.critic_input_projection_constant,
                 scale_input_dense=cfg.critic_scale_input_dense,
+                scaler_init=cfg.critic_scaler_init,
+                scaler_scale=cfg.critic_scaler_scale,
                 alpha_init=cfg.critic_alpha_init,
                 alpha_scale=cfg.critic_alpha_scale,
                 dtype=compute_dtype,
@@ -193,6 +201,8 @@ def _init_hyper_sac_dev_networks(
                 input_projection_type=cfg.critic_input_projection_type,
                 input_projection_constant=cfg.critic_input_projection_constant,
                 scale_input_dense=cfg.critic_scale_input_dense,
+                scaler_init=cfg.critic_scaler_init,
+                scaler_scale=cfg.critic_scaler_scale,
                 alpha_init=cfg.critic_alpha_init,
                 alpha_scale=cfg.critic_alpha_scale,
                 dtype=compute_dtype,
@@ -211,6 +221,8 @@ def _init_hyper_sac_dev_networks(
                 input_projection_type=cfg.critic_input_projection_type,
                 input_projection_constant=cfg.critic_input_projection_constant,
                 scale_input_dense=cfg.critic_scale_input_dense,
+                scaler_init=cfg.critic_scaler_init,
+                scaler_scale=cfg.critic_scaler_scale,
                 alpha_init=cfg.critic_alpha_init,
                 alpha_scale=cfg.critic_alpha_scale,
                 dtype=compute_dtype,
@@ -229,6 +241,8 @@ def _init_hyper_sac_dev_networks(
                 input_projection_type=cfg.critic_input_projection_type,
                 input_projection_constant=cfg.critic_input_projection_constant,
                 scale_input_dense=cfg.critic_scale_input_dense,
+                scaler_init=cfg.critic_scaler_init,
+                scaler_scale=cfg.critic_scaler_scale,
                 alpha_init=cfg.critic_alpha_init,
                 alpha_scale=cfg.critic_alpha_scale,
                 dtype=compute_dtype,
@@ -298,7 +312,6 @@ def _sample_hyper_sac_dev_actions(
     rng, key = jax.random.split(rng)
     dist, _ = actor(observations=observations, temperature=temperature)
     actions = dist.sample(seed=key)
-    actions = jnp.clip(actions, -1.0, 1.0)
 
     return rng, actions
 
@@ -312,6 +325,7 @@ def _sample_hyper_sac_dev_actions(
         "critic_use_categorical",
         "categorical_min_v",
         "categorical_max_v",
+        "categorical_num_bins",
         "target_copy_type",
         "target_copy",
         "target_tau",
@@ -332,6 +346,7 @@ def _update_hyper_sac_dev_networks(
     critic_use_categorical: bool,
     categorical_min_v: float,
     categorical_max_v: float,
+    categorical_num_bins: int,
     target_copy_type: str,
     target_copy: bool,
     target_tau: float,
@@ -349,6 +364,7 @@ def _update_hyper_sac_dev_networks(
             batch=batch,
             min_v=categorical_min_v,
             max_v=categorical_max_v,
+            num_bins=categorical_num_bins,
             critic_use_cdq=critic_use_cdq,
         )
     else:
@@ -379,6 +395,7 @@ def _update_hyper_sac_dev_networks(
             n_step=n_step,
             min_v=categorical_min_v,
             max_v=categorical_max_v,
+            num_bins=categorical_num_bins,
             critic_use_cdq=critic_use_cdq,
         )
     else:
@@ -564,6 +581,7 @@ class HyperSACDevAgent(BaseAgent):
             critic_use_categorical=self._cfg.critic_use_categorical,
             categorical_min_v=self._cfg.categorical_min_v,
             categorical_max_v=self._cfg.categorical_max_v,
+            categorical_num_bins=self._cfg.critic_num_bins,
             target_copy_type=self._cfg.target_copy_type,
             target_copy=(update_step % self._cfg.target_copy_every == 0),
             target_tau=self._cfg.target_tau,

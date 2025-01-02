@@ -67,7 +67,7 @@ class Trainer:
     def apply(self, *args, **kwargs):
         return self.network_def.apply(*args, **kwargs)
 
-    def apply_gradient(self, loss_fn) -> Tuple[Any, "Trainer"]:
+    def apply_gradient(self, loss_fn, get_info=True) -> Tuple[Any, "Trainer"]:
         if self.dynamic_scale:
             grad_fn = self.dynamic_scale.value_and_grad(loss_fn, has_aux=True)
             dynamic_scale, is_fin, (_, info), grads = grad_fn(self.params)
@@ -76,8 +76,10 @@ class Trainer:
             grads, info = grad_fn(self.params)
             dynamic_scale = None
             is_fin = True
-        grad_norm = tree_norm(grads)
-        info["grad_norm"] = grad_norm
+
+        if get_info:
+            grad_norm = tree_norm(grads)
+            info["grad_norm"] = grad_norm
 
         updates, new_opt_state = self.tx.update(grads, self.opt_state, self.params)
         new_params = optax.apply_updates(self.params, updates)

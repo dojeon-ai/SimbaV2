@@ -61,13 +61,11 @@ class QuantileRegressionCritic(nn.Module):
         return value
 
 
-def compute_categorical_bin_values(
-    num_bins: int, min_v: float, max_v: float
+def compute_categorical_value(
+    log_probs: jnp.ndarray, bin_values: jnp.ndarray,
 ) -> jnp.ndarray:
-    return (
-        jnp.arange(num_bins, dtype=jnp.float32) * (max_v - min_v) / (num_bins - 1)
-        + min_v
-    ).reshape((1, -1))
+    probs = jnp.exp(log_probs)
+    return jnp.sum(probs * bin_values, axis=1, keepdims=True)
 
 
 def compute_categorical_loss(
@@ -77,16 +75,15 @@ def compute_categorical_loss(
     done: jnp.ndarray,
     target_log_probs: jnp.ndarray,
     entropy: jnp.ndarray,
+    bin_values: jnp.ndarray,
+    num_bins: int,
     min_v: float,
     max_v: float,
 ) -> jnp.ndarray:
-    _, num_bins = log_probs.shape
-
+    
     # compute target value buckets
-    bin_values = compute_categorical_bin_values(num_bins, min_v, max_v)
-    target_bin_values = jnp.clip(
-        reward + gamma * (bin_values - entropy) * (1 - done), min_v, max_v
-    )
+    target_bin_values = reward + gamma * (bin_values - entropy) * (1.0 - done)
+    target_bin_values = jnp.clip(target_bin_values, min_v, max_v)  # (B, num_bins)
 
     # update indices
     b = (target_bin_values - min_v) / ((max_v - min_v) / (num_bins - 1))
