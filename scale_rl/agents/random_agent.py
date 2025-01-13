@@ -42,3 +42,9 @@ class RandomAgent(BaseAgent):
     def update(self, update_step: int, batch: Dict[str, np.ndarray]) -> Dict:
         update_info = {}
         return update_info
+
+    def save(self, path: str) -> None:
+        pass
+
+    def load(self, path: str) -> None:
+        pass

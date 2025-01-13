@@ -1,0 +1,10 @@
+python run_parallel.py \
+    --group_name design_study \
+    --exp_name m_alpha_scale_1 \
+    --agent_config hyper_simba_dev \
+    --env_type all \
+    --device_ids 0 \
+    --num_seeds 10 \
+    --num_exp_per_device 1 \
+    --overrides agent.actor_alpha_scale=1.0 \
+    --overrides agent.critic_alpha_scale=1.0 \

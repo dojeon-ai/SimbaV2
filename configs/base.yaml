@@ -8,6 +8,8 @@ group_name: 'test'
 exp_name: 'test'
 seed: 0
 server: 'local'
+save_path: 'models/${group_name}/${exp_name}/${env.env_name}/${seed}'
+load_path: null
 
 ##################################################################################
 # Training
@@ -28,11 +30,12 @@ evaluation_per_interaction_step: 50_000   # evaluation frequency per interaction
 metrics_per_interaction_step: 50_000      # log metrics per interaction step.
 recording_per_interaction_step: ${num_interaction_steps}   # video recording frequency per interaction step.
 logging_per_interaction_step: 10_000       # logging frequency per interaction step.
+save_checkpoint_per_interaction_step: ${num_interaction_steps}
 num_eval_episodes: 10
 num_record_episodes: 1
 
 defaults:
 - _self_
-- agent: sac_simba
+- agent: hyper_simba
 - buffer: numpy_uniform
-- env: dmc_em
+- env: dmc

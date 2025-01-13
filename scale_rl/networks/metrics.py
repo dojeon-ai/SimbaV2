@@ -17,16 +17,6 @@ Data = Union[Array, Dict[str, "Data"]]
 Batch = Dict[str, Data]
 
 
-def sum_all_values_in_pytree(pytree) -> float:
-    # Flatten the pytree to get all leaves (individual values)
-    leaves = jax.tree_util.tree_leaves(pytree)
-
-    # Sum all leaves
-    total_sum = sum(jnp.sum(leaf) for leaf in leaves)
-
-    return total_sum
-
-
 # rephrase each key
 def flatten_dict(d, parent_key="", sep="_"):
     items = {}
@@ -46,15 +36,25 @@ def add_prefix_to_dict(d: dict, prefix: str = None, sep="/") -> dict:
     return new_dict
 
 
+def sum_all_values_in_pytree(pytree) -> float:
+    # Flatten the pytree to get all leaves (individual values)
+    leaves = jax.tree_util.tree_leaves(pytree)
+
+    # Sum all leaves
+    total_sum = sum(jnp.sum(leaf) for leaf in leaves)
+
+    return total_sum
+
+
 def get_weight_norm(
     param_dict: Params,
     prefix: str,
 ) -> Dict[str, jnp.ndarray]:
     """
-    param_dict is a frozen dictionary which contains the gradients/values of each individual parameter
+    param_dict is a frozen dictionary which contains the values of each individual parameter
 
     Return:
-        param gradient/value norm dictionary
+        param value norm dictionary
         (Caution : norm values for vmapped functions (multi-head Q-networks) are summed to a single value)
     """
     param_norm_dict = jax.tree_util.tree_map(lambda x: jnp.linalg.norm(x), param_dict)
@@ -70,6 +70,53 @@ def get_weight_norm(
     return add_prefix_to_dict(
         flatten_dict(updated_params), prefix + "/weightnorm", sep="_"
     )
+
+
+def get_grad_norm(
+    grad_dict: Params,
+    prefix: str,
+) -> Dict[str, jnp.ndarray]:
+    """
+    grad_dict is a frozen dictionary which contains the gradients of each individual parameter
+
+    Return:
+        param gradient norm dictionary
+        (Caution : norm values for vmapped functions (multi-head Q-networks) are summed to a single value)
+    """
+    grad_norm_dict = jax.tree_util.tree_map(lambda x: jnp.linalg.norm(x), grad_dict)
+    updated_params = add_all_key(grad_norm_dict)
+    squared_param_norm_dict = jax.tree_util.tree_map(
+        lambda x: jnp.square(x), grad_norm_dict
+    )
+
+    updated_params["total"] = jnp.sqrt(
+        sum_all_values_in_pytree(squared_param_norm_dict)
+    )
+
+    return add_prefix_to_dict(
+        flatten_dict(updated_params), prefix + "/gradnorm", sep="_"
+    )
+
+
+def get_effective_lr(
+    grad_dict: Params,
+    param_dict: Params,
+    prefix: str,
+) -> Dict[str, jnp.ndarray]:
+    """
+    grad_dict is a frozen dictionary which contains the gradients of each individual parameter
+
+    Return:
+        param gradient norm dictionary
+        (Caution : norm values for vmapped functions (multi-head Q-networks) are summed to a single value)
+    """
+    effective_lr_dict = {}
+    for _k, _g in grad_dict.items():
+        # remove prefix
+        _layer = _k.replace(prefix + "/gradnorm_", "")
+        _p = param_dict[prefix + "/weightnorm_" + _layer]
+        effective_lr_dict[prefix + "/effective_lr_" + _layer] = _g / _p
+    return effective_lr_dict
 
 
 def get_scaler_stat(
@@ -104,7 +151,11 @@ def add_all_key(d):
             if "kernel" in new_dict[key] and "bias" in new_dict[key]:
                 kernel_norm = jnp.square(new_dict[key]["kernel"])
                 bias_norm = jnp.square(new_dict[key]["bias"])
-                new_dict[key] = jnp.sqrt(kernel_norm + bias_norm)
+                # Integrated Norm
+                new_dict[key + "_kernel+bias"] = jnp.sqrt(kernel_norm + bias_norm)
+                # Separated Norm
+                new_dict[key + "_kernel"] = jnp.sqrt(kernel_norm)
+                new_dict[key + "_bias"] = jnp.sqrt(bias_norm)
         else:
             new_dict[key] = jnp.linalg.norm(value)
     return new_dict

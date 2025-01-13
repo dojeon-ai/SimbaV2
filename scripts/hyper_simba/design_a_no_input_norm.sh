@@ -1,0 +1,12 @@
+python run_parallel.py \
+    --group_name design_study \
+    --exp_name a_no_input_norm \
+    --agent_config hyper_simba_dev \
+    --env_type all \
+    --device_ids 0 \
+    --num_seeds 10 \
+    --num_exp_per_device 1 \
+    --overrides agent.actor_input_process_type='linear_project' \
+    --overrides agent.actor_input_projection_type='l2' \
+    --overrides agent.critic_input_process_type='linear_project' \
+    --overrides agent.critic_input_projection_type='l2' \

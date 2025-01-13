@@ -2,6 +2,7 @@ import argparse
 import copy
 import multiprocessing as mp
 import os
+import pprint
 import time
 
 import numpy as np
@@ -26,6 +27,7 @@ def run_with_device(server, device_id, config_path, config_name, overrides):
 
     os.environ["MUJOCO_EGL_DEVICE_ID"] = str(0)
     os.environ["OMP_NUM_THREADS"] = "2"
+    os.environ["WANDB_START_METHOD"] = "thread"
 
     # Now import the main script
     from run import run
@@ -39,17 +41,23 @@ def run_with_device(server, device_id, config_path, config_name, overrides):
 
 
 if __name__ == "__main__":
+    ###################################################################################
+    # NOTE:
+    # current implementation only support parallelism when num_seeds=num_exp_per_device
+    ####################################################################################
+
     parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument("--config_path", type=str, default="./configs")
     parser.add_argument("--config_name", type=str, default="base")
     parser.add_argument("--agent_config", type=str, default="hyper_simba_dev")
-    parser.add_argument("--env_type", type=str, default="dmc_hard")
+    parser.add_argument("--env_type", type=str, default="acrobot_continual")
     parser.add_argument("--device_ids", default=[0], nargs="+")
     parser.add_argument("--num_seeds", type=int, default=1)
     parser.add_argument("--num_exp_per_device", type=int, default=1)
     parser.add_argument("--server", type=str, default="local")
     parser.add_argument("--group_name", type=str, default="test")
     parser.add_argument("--exp_name", type=str, default="test")
+    parser.add_argument("--num_sequence", type=int, default=2)
     parser.add_argument("--overrides", action="append", default=[])
 
     args = vars(parser.parse_args())
@@ -69,127 +77,64 @@ if __name__ == "__main__":
     group_name = args.pop("group_name")
     exp_name = args.pop("exp_name")
     agent_config = args.pop("agent_config")
+    num_sequence = args.pop("num_sequence")
 
     # import library after CUDA_VISIBLE_DEVICES operation
-    from scale_rl.envs.dmc import DMC_EASY_MEDIUM, DMC_HARD
-    from scale_rl.envs.humanoid_bench import HB_LOCOMOTION_NOHAND
-    from scale_rl.envs.mujoco import MUJOCO_ALL
-    from scale_rl.envs.myosuite import MYOSUITE_TASKS
+    from scale_rl.envs.humanoid_bench import HB_LOCOMOTION_NOHAND_SEQUENTIAL
 
     env_type = args.pop("env_type")
-    if env_type == "mujoco":
-        envs = MUJOCO_ALL
-        env_configs = [env_type] * len(envs)
+    if env_type == "hb_sequential":
+        envs = HB_LOCOMOTION_NOHAND_SEQUENTIAL
+        env_configs = ["hb_locomotion"] * len(envs)
 
-    elif env_type == "dmc_em":
-        envs = DMC_EASY_MEDIUM
-        env_configs = ["dmc"] * len(envs)
-
-    elif env_type == "dmc_hard":
-        envs = DMC_HARD
-        env_configs = ["dmc"] * len(envs)
-
-    elif env_type == "myosuite":
-        envs = MYOSUITE_TASKS
-        env_configs = [env_type] * len(envs)
-
-    elif env_type == "hb_locomotion":
-        envs = HB_LOCOMOTION_NOHAND
-        env_configs = [env_type] * len(envs)
-
-    elif env_type == "all":
-        envs = (
-            MUJOCO_ALL
-            + DMC_EASY_MEDIUM
-            + DMC_HARD
-            + MYOSUITE_TASKS
-            + HB_LOCOMOTION_NOHAND
-        )
-        env_configs = (
-            ["mujoco"] * len(MUJOCO_ALL)
-            + ["dmc"] * len(DMC_EASY_MEDIUM)
-            + ["dmc"] * len(DMC_HARD)
-            + ["myosuite"] * len(MYOSUITE_TASKS)
-            + ["hb_locomotion"] * len(HB_LOCOMOTION_NOHAND)
-        )
-
-    elif env_type == "mujoco_myo_dmc_hard":
-        envs = MUJOCO_ALL + DMC_HARD + MYOSUITE_TASKS
-        env_configs = (
-            ["mujoco"] * len(MUJOCO_ALL)
-            + ["dmc"] * len(DMC_HARD)
-            + ["myosuite"] * len(MYOSUITE_TASKS)
-        )
-
-    elif env_type == "mujoco_dmc_em_dmc_hard":
-        envs = MUJOCO_ALL + DMC_EASY_MEDIUM + DMC_HARD
-        env_configs = (
-            ["mujoco"] * len(MUJOCO_ALL)
-            + ["dmc"] * len(DMC_EASY_MEDIUM)
-            + ["dmc"] * len(DMC_HARD)
-        )
-
-    elif env_type == "mini_benchmark":
-        mujoco_envs = [
-            "HalfCheetah-v4",
-            "Humanoid-v4",
-        ]
-
-        dmc_em_envs = [
-            "acrobot-swingup",
-            "cartpole-swingup_sparse",
-            "cheetah-run",
-            "finger-spin",
-        ]
-
-        dmc_hard_envs = [
-            "dog-run",
-            "dog-trot",
-            "humanoid-stand",
-            "humanoid-walk",
-        ]
-
-        myo_envs = [
-            "myo-key-turn-hard",
-            "myo-pen-twirl-hard",
-        ]
-
-        hb_envs = [
-            "h1-balance_simple-v0",
-            "h1-run-v0",
-            "h1-stair-v0",
-            "h1-stand-v0",
-        ]
-
-        envs = mujoco_envs + dmc_em_envs + dmc_hard_envs + myo_envs + hb_envs
-        env_configs = (
-            ["mujoco"] * len(mujoco_envs)
-            + ["dmc"] * len(dmc_em_envs)
-            + ["dmc"] * len(dmc_hard_envs)
-            + ["myosuite"] * len(myo_envs)
-            + ["hb_locomotion"] * len(hb_envs)
-        )
+    # for sanity check
+    elif env_type == "acrobot_continual":
+        envs = ["acrobot-swingup"]
+        env_configs = ["dmc"]
 
     else:
         raise NotImplementedError
 
-    for seed in seeds:
-        for idx, env_name in enumerate(envs):
-            exp = copy.deepcopy(args)  # copy overriding arguments
-            exp["config_path"] = config_path
-            exp["config_name"] = config_name
+    for sequence in range(num_sequence):
+        cur_exp_name = exp_name + "_" + str(sequence)
+        for env_idx, env_name in enumerate(envs):  # Then loop over environments
+            for seed_idx, seed in enumerate(seeds):
+                exp = copy.deepcopy(args)  # copy overriding arguments
+                exp["config_path"] = config_path
+                exp["config_name"] = config_name
 
-            exp["overrides"].append("agent=" + agent_config)
-            exp["overrides"].append("env=" + env_configs[idx])
-            exp["overrides"].append("env.env_name=" + env_name)
+                exp["overrides"].append("agent=" + agent_config)
+                exp["overrides"].append("env=" + env_configs[env_idx])
+                exp["overrides"].append("env.env_name=" + env_name)
 
-            exp["overrides"].append("server=" + server)
-            exp["overrides"].append("group_name=" + group_name)
-            exp["overrides"].append("exp_name=" + exp_name)
-            exp["overrides"].append("seed=" + str(seed))
+                exp["overrides"].append("server=" + server)
+                exp["overrides"].append("group_name=" + group_name)
+                exp["overrides"].append("exp_name=" + cur_exp_name)
+                exp["overrides"].append("seed=" + str(seed))
 
-            experiments.append(exp)
-            print(exp)
+                # Sequentially load model and continue training
+                if not ((sequence == 0) and (env_idx == 0)):
+                    prev_exp_name = (
+                        exp_name + "_" + str(sequence if env_idx > 0 else sequence - 1)
+                    )
+                    prev_env_name = envs[env_idx - 1] if env_idx > 0 else envs[-1]
+                    load_path = (
+                        "models"
+                        + "/"
+                        + group_name
+                        + "/"
+                        + prev_exp_name
+                        + "/"
+                        + prev_env_name
+                        + "/"
+                        + str(seed)
+                    )
+                    exp["overrides"].append("load_path=" + load_path)
+
+                # Append the experiment to the list
+                experiments.append(exp)
+
+    pprint.pp(experiments)
 
     # run parallel experiments
     # https://docs.python.org/3.5/library/multiprocessing.html#contexts-and-start-methods
@@ -197,7 +142,27 @@ if __name__ == "__main__":
     available_gpus = device_ids
     process_dict = {gpu_id: [] for gpu_id in device_ids}
 
+    # Dictionary to track the last running process for each seed
+    # This ensures that sub-experiments for the same seed run sequentially (a->b->c).
+    seed_process_map = {}
+
     for exp in experiments:
+        # 1) Extract the seed for this experiment
+        seed_value = None
+        for override_item in exp["overrides"]:
+            if override_item.startswith("seed="):
+                seed_value = override_item.split("=")[1]
+                break
+
+        # 2) If there is already a process running for this seed,
+        #    we must join() it to ensure it finishes before launching the next sub-experiment.
+        if seed_value in seed_process_map:
+            print(
+                f"[Seed {seed_value}] Waiting for previous sub-experiment to finish..."
+            )
+            seed_process_map[seed_value].join()
+            del seed_process_map[seed_value]
+
         wait = True
         # wait until there exists a finished process
         while wait:
@@ -234,7 +199,10 @@ if __name__ == "__main__":
             ),
         )
         process.start()
+
+        # save this process in seed_process_map for sequential gating
         processes.append(process)
+        seed_process_map[seed_value] = process
         print(f"Process {process.pid} on GPU {gpu_id} started.")
 
         # check if the GPU has reached its maximum number of processes

@@ -1,0 +1,10 @@
+python run_parallel.py \
+    --group_name design_study \
+    --exp_name d_resize_proj \
+    --agent_config hyper_simba_dev \
+    --env_type all \
+    --device_ids 0 \
+    --num_seeds 10 \
+    --num_exp_per_device 1 \
+    --overrides agent.actor_input_projection_type='hypercube' \
+    --overrides agent.critic_input_projection_type='hypercube' \

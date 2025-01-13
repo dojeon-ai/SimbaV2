@@ -1,0 +1,11 @@
+python run_parallel.py \
+    --group_name design_study \
+    --exp_name g_no_rew_bound \
+    --agent_config hyper_simba_dev \
+    --env_type all \
+    --device_ids 0 \
+    --num_seeds 10 \
+    --num_exp_per_device 1 \
+    --overrides agent.normalized_g_max=99999 \
+    --overrides agent.categorical_min_v=-5 \
+    --overrides agent.categorical_max_v=5 \

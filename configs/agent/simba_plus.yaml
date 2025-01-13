@@ -1,0 +1,53 @@
+##################################################################################
+# Simba with Categorical Critic & Reward Scaling
+##################################################################################
+
+agent_type: 'simba'
+
+seed: ${seed}
+num_train_envs: ${env.num_train_envs}
+max_episode_steps: ${env.max_episode_steps}
+normalize_observation: true
+normalize_reward: true
+normalized_g_max: 5.0
+
+load_only_param: true    # do not load optimizer
+load_param_key: null     # load designated key
+load_observation_normalizer: true
+load_reward_normalizer: true
+
+actor_block_type: 'residual'
+actor_num_blocks: 1
+actor_hidden_dim: 128
+actor_learning_rate_init: 1e-4
+actor_learning_rate_end: 1e-4
+actor_learning_rate_decay_rate: 1.0 
+actor_learning_rate_decay_step: ${eval:'int(${agent.actor_learning_rate_decay_rate} * ${num_interaction_steps} * ${updates_per_interaction_step})'}
+actor_weight_decay: 1e-2
+
+critic_block_type: 'residual'
+critic_num_blocks: 2
+critic_hidden_dim: 512
+critic_learning_rate_init: 1e-4
+critic_learning_rate_end: 1e-4
+critic_learning_rate_decay_rate: 1.0 
+critic_learning_rate_decay_step: ${eval:'int(${agent.critic_learning_rate_decay_rate} * ${num_interaction_steps} * ${updates_per_interaction_step})'}
+critic_weight_decay: 1e-2
+critic_use_cdq: ${env.episodic}
+
+critic_use_categorical: true
+critic_num_bins: 101
+categorical_min_v: ${eval:'-${agent.normalized_g_max}'}
+categorical_max_v: ${eval:'${agent.normalized_g_max}'}
+
+temp_target_entropy: null # entropy_coef * action_dim
+temp_target_entropy_coef: -0.5 
+temp_initial_value: 0.01
+temp_learning_rate: 1e-4
+temp_weight_decay: 0.0
+
+target_tau: 0.005
+gamma: ${gamma}
+n_step: ${n_step}
+
+mixed_precision: false

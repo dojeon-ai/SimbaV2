@@ -1,0 +1,82 @@
+##################################################################################
+# SAC with Hyper-Simba architecture (dev setup)
+##################################################################################
+
+agent_type: 'hyper_simba_dev'
+
+seed: ${seed}
+num_train_envs: ${env.num_train_envs}
+max_episode_steps: ${env.max_episode_steps}
+normalize_observation: true
+normalize_reward: true
+normalized_g_max: 5.0
+
+load_only_param: true    # do not load optimizer
+load_param_key: null     # load designated key
+load_observation_normalizer: true
+load_reward_normalizer: true
+
+actor_num_blocks: 1
+actor_hidden_dim: 128
+actor_learning_rate_init: 1e-4
+actor_learning_rate_end: 5e-5
+actor_learning_rate_decay_rate: 1.0 
+actor_learning_rate_decay_step: ${eval:'int(${agent.actor_learning_rate_decay_rate} * ${num_interaction_steps} * ${updates_per_interaction_step})'}
+actor_weight_decay: 0.0
+actor_input_process_type: 'project_linear_norm'
+actor_input_projection_type: 'shift'
+actor_input_projection_constant: 3.0
+actor_scale_input_dense: true
+actor_scaler_init: ${eval:'1 / math.sqrt(${agent.actor_hidden_dim})'}
+actor_scaler_scale: ${eval:'1 / math.sqrt(${agent.actor_hidden_dim})'}
+actor_alpha_init: ${eval:'1 / (${agent.actor_num_blocks} + 1)'}
+actor_alpha_scale: ${eval:'1 / math.sqrt(${agent.actor_hidden_dim})'}
+actor_output_separate_mean_std: true
+actor_output_project_in: true
+actor_output_hidden_dim: 128
+actor_output_use_scaler: true
+actor_output_non_linear: false
+actor_output_use_bias: true
+
+critic_num_blocks: 2
+critic_hidden_dim: 512
+critic_learning_rate_init: 1e-4
+critic_learning_rate_end: 5e-5
+critic_learning_rate_decay_rate: 1.0 
+critic_learning_rate_decay_step: ${eval:'int(${agent.critic_learning_rate_decay_rate} * ${num_interaction_steps} * ${updates_per_interaction_step})'}
+critic_weight_decay: 0.0
+critic_use_cdq: ${env.episodic}
+critic_input_process_type: 'project_linear_norm'
+critic_input_projection_type: 'shift'
+critic_input_projection_constant: 3.0
+critic_scale_input_dense: true
+critic_scaler_init: ${eval:'1 / math.sqrt(${agent.critic_hidden_dim})'}
+critic_scaler_scale: ${eval:'1 / math.sqrt(${agent.critic_hidden_dim})'}
+critic_alpha_init: ${eval:'1 / (${agent.critic_num_blocks} + 1)'}
+critic_alpha_scale: ${eval:'1 / math.sqrt(${agent.critic_hidden_dim})'}
+critic_output_project_in: true
+critic_output_hidden_dim: 512
+critic_output_use_scaler: true
+critic_output_non_linear: false
+critic_output_use_bias: true
+
+# dev
+critic_use_categorical: true
+critic_num_bins: 101
+categorical_min_v: ${eval:'-${agent.normalized_g_max}'}
+categorical_max_v: ${eval:'${agent.normalized_g_max}'}
+
+temp_target_entropy: null # entropy_coef * action_dim
+temp_target_entropy_coef: -0.5 
+temp_initial_value: 0.01
+temp_learning_rate: 1e-4
+temp_weight_decay: 0.0
+
+target_copy_type: 'soft' # [hard, soft]
+target_copy_every: 250
+target_tau: 0.005 # soft
+target_normalize_weight: false
+gamma: ${gamma}
+n_step: ${n_step}
+
+mixed_precision: false

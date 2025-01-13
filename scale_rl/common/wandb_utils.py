@@ -1,6 +1,7 @@
 from collections import defaultdict
 from typing import Dict, List, Optional
 
+import os
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -158,6 +159,57 @@ def convert_wandb_df_to_eval_df(runs_df, metrics: List, n_samples=100000):
     return pd.DataFrame(records)
 
 
+def read_and_concatenate_eval_df(directory_path):
+    """
+    Reads all CSV files in the specified directory and concatenates them into a single DataFrame.
+
+    Args:
+        directory_path (str): Path to the directory containing CSV files.
+
+    Returns:
+        pd.DataFrame: Concatenated DataFrame containing all CSV files' content.
+    """
+    # Initialize an empty DataFrame for concatenation
+    concatenated_df = pd.DataFrame()
+
+    # List all files in the directory
+    for file_name in os.listdir(directory_path):
+        # Construct the full file path
+        file_path = os.path.join(directory_path, file_name)
+
+        # Check if the file is a CSV file
+        if file_name.endswith('.csv'):
+            # Read the file
+            try:
+                file_df = pd.read_csv(file_path, index_col=0)
+                
+                # Append to the concatenated DataFrame
+                concatenated_df = pd.concat([concatenated_df, file_df], ignore_index=True)
+            except Exception as e:
+                print(f"Error reading {file_path}: {e}")
+
+    concatenated_df = concatenated_df.reset_index(drop=True)
+
+    return concatenated_df
+
+
+def save_eval_df(eval_df, directory_path):
+    """
+    Saves individual subsets of eval_df into separate CSV files named after unique values in the 'exp_name' column.
+
+    Args:
+        eval_df (pd.DataFrame): DataFrame containing the data to save.
+        directory_path (str): Path to the directory where the files will be saved.
+    """
+    if not os.path.exists(directory_path):
+        os.makedirs(directory_path)
+
+    for exp_name in eval_df['exp_name'].unique():
+        _eval_df = eval_df[eval_df['exp_name'] == exp_name].reset_index(drop=True)
+        file_path = os.path.join(directory_path, f"{exp_name}.csv")
+        _eval_df.to_csv(file_path)
+        
+
 def plot_metric_history_per_env(
     eval_df,
     metric: str = "avg_return",
@@ -247,11 +299,15 @@ def generate_metric_matrix_dict(eval_df, env_step: int, metric_type: str):
     Args:
     - eval_df (pandas DataFrame): DataFrame containing the evaluation data.
     - env_step (int): The specific environment step to extract metrics for.
+    - metric_type (str): The metric to collect (e.g., 'avg_return').
 
     Returns:
-    - metric_matrix_dict (dict): Dictionary where keys are experiment names and values are 2D numpy arrays representing metric matrices.
+    - metric_matrix_dict (dict):
+        Keys: experiment names (exp_name).
+        Values: 2D numpy arrays of shape (num_envs, num_seeds) with the metrics.
+                Each row is an environment; each column is a seed.
     """
-    # Filter data for the specified env_step
+    # Filter data for the specified env_step and metric_type
     filtered_df = eval_df[
         (eval_df["env_step"] == env_step) & (eval_df["metric"] == metric_type)
     ]
@@ -266,7 +322,7 @@ def generate_metric_matrix_dict(eval_df, env_step: int, metric_type: str):
         # Filter data for the current experiment
         exp_data = filtered_df[filtered_df["exp_name"] == exp_name]
 
-        # Pivot table to have env_names as rows and individual scores as columns
+        # Pivot table to have env_name as rows, each seed as a column
         pivot_table = exp_data.pivot_table(
             values="value", index="env_name", columns="seed", aggfunc="first"
         )
@@ -274,10 +330,10 @@ def generate_metric_matrix_dict(eval_df, env_step: int, metric_type: str):
         # Convert the pivot table to a numpy array
         metric_matrix = pivot_table.to_numpy()
 
-        # Check for NaN values in each column (run or seed)
+        # Optionally remove any columns (seeds) that contain NaNs across all envs
+        # (If you prefer to keep partial data, you can remove this block,
+        #  or adjust it to your preference.)
         nan_cols = np.any(np.isnan(metric_matrix), axis=0)
-
-        # Remove columns with NaN values
         metric_matrix = metric_matrix[:, ~nan_cols]
 
         # Add the metric matrix to the dictionary
@@ -287,9 +343,7 @@ def generate_metric_matrix_dict(eval_df, env_step: int, metric_type: str):
 
 
 def normalize_score_with_random_and_base_score(
-    df: pd.DataFrame,
-    random_score_dict: dict,
-    base_score_dict: dict
+    df: pd.DataFrame, random_score_dict: dict, base_score_dict: dict
 ) -> pd.DataFrame:
     """
     Normalize the 'value' column based on random and base scores.

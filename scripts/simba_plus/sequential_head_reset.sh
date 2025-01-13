@@ -1,0 +1,11 @@
+python run_sequential.py \
+    --group_name test \
+    --exp_name simba_plus_head_reset \
+    --agent_config simba_plus \
+    --env_type hb_sequential \
+    --device_ids 0 \
+    --num_seeds 5 \
+    --num_exp_per_device 1 \
+    --overrides agent.load_only_param=true \
+    --overrides agent.load_param_key='encoder' \
+    --overrides agent.load_reward_normalizer=false \

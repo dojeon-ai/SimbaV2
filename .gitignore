@@ -159,3 +159,6 @@ tmp/**
 # cache
 *.ipynb_checkpoints
 *.nfs*
+
+# saved checkpoints
+models/**

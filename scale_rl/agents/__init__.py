@@ -3,11 +3,9 @@ from typing import TypeVar
 from omegaconf import OmegaConf
 from scale_rl.agents.base_agent import BaseAgent
 from scale_rl.agents.random_agent import RandomAgent
-from scale_rl.agents.sac.sac_agent import SACAgent
-from scale_rl.agents.sac_dev.sac_dev_agent import SACDevAgent
-from scale_rl.agents.hyper_sac.hyper_sac_agent import HyperSACAgent
-from scale_rl.agents.hyper_sac_dev.hyper_sac_dev_agent import HyperSACDevAgent
-from scale_rl.agents.ddpg.ddpg_agent import DDPGAgent
+from scale_rl.agents.simba.simba_agent import SimbaAgent
+from scale_rl.agents.hyper_simba.hyper_simba_agent import HyperSimbaAgent
+from scale_rl.agents.hyper_simba_dev.hyper_simba_dev_agent import HyperSimbaDevAgent
 from scale_rl.agents.wrappers import ObservationNormalizer, RewardNormalizer
 
 Config = TypeVar('Config')
@@ -25,29 +23,30 @@ def create_agent(
     if agent_type == 'random':
         agent = RandomAgent(observation_space, action_space, cfg)
 
-    elif agent_type == 'sac':
-        agent = SACAgent(observation_space, action_space, cfg)
+    elif agent_type == 'simba':
+        agent = SimbaAgent(observation_space, action_space, cfg)
 
-    elif agent_type == 'sac_dev':
-        agent = SACDevAgent(observation_space, action_space, cfg)
+    elif agent_type == 'hyper_simba':
+        agent = HyperSimbaAgent(observation_space, action_space, cfg)
 
-    elif agent_type == 'ddpg':
-        agent = DDPGAgent(observation_space, action_space, cfg)
-
-    elif agent_type == 'hyper_sac':
-        agent = HyperSACAgent(observation_space, action_space, cfg)
-
-    elif agent_type == 'hyper_sac_dev':
-        agent = HyperSACDevAgent(observation_space, action_space, cfg)
+    elif agent_type == 'hyper_simba_dev':
+        agent = HyperSimbaDevAgent(observation_space, action_space, cfg)
 
     else:
         raise NotImplementedError
 
-    # agent-wrappers
+    # observation and reward normalization wrappers
     if cfg['normalize_observation']:
-        agent = ObservationNormalizer(agent)
-    # dev
+        agent = ObservationNormalizer(
+            agent, 
+            load_rms=cfg['load_observation_normalizer']
+        )
     if cfg['normalize_reward']:
-        agent = RewardNormalizer(agent, gamma = cfg['gamma'], g_max=cfg['normalized_g_max'])
+        agent = RewardNormalizer(
+            agent, 
+            gamma=cfg['gamma'], 
+            g_max=cfg['normalized_g_max'],
+            load_rms=cfg['load_reward_normalizer']
+        )
 
     return agent

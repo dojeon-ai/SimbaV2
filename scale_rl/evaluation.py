@@ -56,7 +56,9 @@ def evaluate(
                         try:
                             final_successes[idx] = final_info["success"].astype("float")
                         except:
-                            final_successes[idx] = np.array(final_info["success"]).astype("float")
+                            final_successes[idx] = np.array(
+                                final_info["success"]
+                            ).astype("float")
                 successes += final_successes * (1 - dones)
 
             else:

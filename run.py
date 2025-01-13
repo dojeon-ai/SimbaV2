@@ -1,6 +1,8 @@
 import argparse
 import math
+import os
 import random
+import sys
 
 import hydra
 import numpy as np
@@ -73,6 +75,13 @@ def run(args):
 
     logger = WandbTrainerLogger(cfg)
 
+    # load model if given
+    script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+    save_path = script_dir + "/" + cfg.save_path
+    if cfg.load_path:
+        load_path = script_dir + "/" + cfg.load_path
+        agent.load(load_path)
+
     # initial evaluation
     eval_info = evaluate(agent, eval_env, cfg.num_eval_episodes)
     logger.update_metric(**eval_info)
@@ -140,7 +149,7 @@ def run(args):
             # metrics
             if interaction_step % cfg.metrics_per_interaction_step == 0:
                 batch = buffer.sample()
-                metrics_info = agent.get_metrics(batch)
+                metrics_info = agent.get_metrics(batch, update_info)
                 if metrics_info:
                     logger.update_metric(**metrics_info)
 
@@ -155,6 +164,10 @@ def run(args):
                 env_step = interaction_step * cfg.action_repeat * cfg.num_train_envs
                 logger.log_metric(step=env_step)
                 logger.reset()
+
+            # checkpointing
+            if interaction_step % cfg.save_checkpoint_per_interaction_step == 0:
+                agent.save(save_path)
 
     train_env.close()
     eval_env.close()

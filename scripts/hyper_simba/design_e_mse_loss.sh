@@ -1,0 +1,9 @@
+python run_parallel.py \
+    --group_name design_study \
+    --exp_name e_mse_loss \
+    --agent_config hyper_simba_dev \
+    --env_type all \
+    --device_ids 0 \
+    --num_seeds 10 \
+    --num_exp_per_device 1 \
+    --overrides agent.critic_use_categorical=False \

@@ -1,0 +1,9 @@
+python run_sequential.py \
+    --group_name test \
+    --exp_name hyper_simba \
+    --agent_config hyper_simba_dev \
+    --env_type hb_sequential \
+    --device_ids 0 \
+    --num_seeds 5 \
+    --num_exp_per_device 1 \
+    --overrides agent.load_only_param=true \
