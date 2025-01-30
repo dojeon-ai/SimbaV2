@@ -21,3 +21,5 @@ termcolor==2.4.0
 tqdm==4.66.1
 wandb==0.16.6
 moviepy==1.0.3
+gym==0.26.2
+git+https://github.com/takuseno/D4RL

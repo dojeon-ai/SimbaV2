@@ -1,5 +1,5 @@
 ,exp_name,env_name,seed,metric,env_step,value
-0,ppo,Craftax-Symbolic-v1,4000,avg_return,0.0,0.9124999642372131
+0,ppo,Craftax-Symbolic-v1,4000,avg_return,0.0,0.9124999642372132
 1,ppo,Craftax-Symbolic-v1,4000,avg_return,9961472.0,7.912499904632568
 2,ppo,Craftax-Symbolic-v1,4000,avg_return,19988480.0,11.787498474121094
 3,ppo,Craftax-Symbolic-v1,4000,avg_return,29949952.0,14.990623474121094
@@ -102,7 +102,7 @@
 100,ppo,Craftax-Symbolic-v1,4000,avg_return,999948288.0,27.490623474121094
 101,ppo,Craftax-Symbolic-v1,3000,avg_return,0.0,1.100000023841858
 102,ppo,Craftax-Symbolic-v1,3000,avg_return,9961472.0,8.475000381469727
-103,ppo,Craftax-Symbolic-v1,3000,avg_return,19988480.0,11.959375381469727
+103,ppo,Craftax-Symbolic-v1,3000,avg_return,19988480.0,11.959375381469728
 104,ppo,Craftax-Symbolic-v1,3000,avg_return,29949952.0,14.412498474121094
 105,ppo,Craftax-Symbolic-v1,3000,avg_return,39976960.0,15.912498474121094
 106,ppo,Craftax-Symbolic-v1,3000,avg_return,49938432.0,16.756248474121094
@@ -302,9 +302,9 @@
 300,ppo,Craftax-Symbolic-v1,2000,avg_return,979959808.0,22.334373474121094
 301,ppo,Craftax-Symbolic-v1,2000,avg_return,989986816.0,22.756248474121094
 302,ppo,Craftax-Symbolic-v1,2000,avg_return,999948288.0,22.693748474121094
-303,ppo,Craftax-Symbolic-v1,1000,avg_return,0.0,0.9281250238418579
+303,ppo,Craftax-Symbolic-v1,1000,avg_return,0.0,0.928125023841858
 304,ppo,Craftax-Symbolic-v1,1000,avg_return,9961472.0,8.381250381469727
-305,ppo,Craftax-Symbolic-v1,1000,avg_return,19988480.0,11.068750381469727
+305,ppo,Craftax-Symbolic-v1,1000,avg_return,19988480.0,11.068750381469728
 306,ppo,Craftax-Symbolic-v1,1000,avg_return,29949952.0,14.224998474121094
 307,ppo,Craftax-Symbolic-v1,1000,avg_return,39976960.0,16.912498474121094
 308,ppo,Craftax-Symbolic-v1,1000,avg_return,49938432.0,17.099998474121094

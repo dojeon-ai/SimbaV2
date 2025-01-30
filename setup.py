@@ -8,7 +8,7 @@ if __name__ == "__main__":
     setup(
         name="scale_rl",
         version="0.1.0",
-        url="https://github.com/SonyResearch/simba",
+        url="https://github.com/dojeon-ai/SimbaV2",
         license="Apache License 2.0",
         install_requires=install_requires,
         packages=find_packages(),

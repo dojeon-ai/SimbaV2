@@ -159,7 +159,7 @@ class RewardNormalizer(AgentWrapper):
             terminated = prev_timestep["terminated"]
             self.G = self.gamma * (1 - terminated) * self.G + reward
             self.G_rms.update(self.G)
-            self.G_r_max = max(self.G_r_max, abs(self.G))
+            self.G_r_max = max(self.G_r_max, max(abs(self.G)))
 
         return self.agent.sample_actions(
             interaction_step=interaction_step,

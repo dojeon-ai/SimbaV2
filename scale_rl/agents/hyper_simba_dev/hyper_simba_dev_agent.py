@@ -33,10 +33,11 @@ from scale_rl.networks.metrics import (
     get_dormant_ratio,
     get_effective_lr,
     get_feature_norm,
-    get_grad_norm,
+    get_gnorm,
+    get_num_parameters_dict,
+    get_pnorm,
     get_rank,
-    get_scaler_stat,
-    get_weight_norm,
+    get_scaler_statistics,
 )
 from scale_rl.networks.trainer import PRNGKey, Trainer
 
@@ -443,7 +444,10 @@ def _get_metrics_hyper_simba_dev_networks(
     rng: PRNGKey,
     actor: Trainer,
     critic: Trainer,
+    critic_use_cdq: bool,
     target_critic: Trainer,
+    actor_pcount_dict: Dict[str, int],
+    critic_pcount_dict: Dict[str, int],
     batch: Batch,
     update_info: Dict[str, Any],
 ) -> Tuple[PRNGKey, Trainer, Trainer, Trainer, Trainer, Trainer, Dict[str, float]]:
@@ -457,45 +461,57 @@ def _get_metrics_hyper_simba_dev_networks(
         6) Smooth rank
         7) Feature coadaptation (DR3 Kumar et al.)
     """
-
+    # Actor
     _, actor_info = actor(observations=batch["observation"])
-    actor_param_norm_dict = get_weight_norm(actor.params, prefix="actor")
-    actor_grad_norm_dict = get_grad_norm(
-        update_info.pop("actor/_grads"), prefix="actor"
+    actor_pnorm_dict = get_pnorm(actor.params, actor_pcount_dict, prefix="actor")
+    actor_gnorm_dict = get_gnorm(
+        update_info.pop("actor/_grads"), actor_pcount_dict, prefix="actor"
     )
     actor_effective_lr_dict = get_effective_lr(
-        actor_grad_norm_dict, actor_param_norm_dict, prefix="actor"
+        actor_gnorm_dict, actor_pnorm_dict, actor_pcount_dict, prefix="actor"
     )
     actor_metrics_info = {
         **get_dormant_ratio(actor_info, prefix="actor", tau=0.1),
         **get_dormant_ratio(actor_info, prefix="actor", tau=0.0),
         **get_feature_norm(actor_info, prefix="actor"),
         **get_rank(actor_info, prefix="actor"),
-        **get_scaler_stat(actor.params, prefix="actor"),
-        **actor_param_norm_dict,
-        **actor_grad_norm_dict,
+        **get_scaler_statistics(actor.params, prefix="actor"),
+        **actor_pnorm_dict,
+        **actor_gnorm_dict,
         **actor_effective_lr_dict,
     }
 
+    # Critic
     _, critic_info = critic(observations=batch["observation"], actions=batch["action"])
-    critic_param_norm_dict = get_weight_norm(critic.params, prefix="critic")
-    critic_grad_norm_dict = get_grad_norm(
-        update_info.pop("critic/_grads"), prefix="critic"
-    )
+    critic_params = critic.params
+    target_critic_params = target_critic.params
+    critic_grads = update_info.pop("critic/_grads")
+    # Remove Vmap module
+    if critic_use_cdq:
+        # Elements (e.g. pnorm, gnorm) of vmapped functions (multi-head Q-networks) are summed to a single value
+        (_, critic_params), = critic_params.items()
+        (_, target_critic_params), = target_critic_params.items()
+        (_, critic_grads), = critic_grads.items()
+    critic_pnorm_dict = get_pnorm(critic_params, critic_pcount_dict, prefix="critic")
+    critic_gnorm_dict = get_gnorm(critic_grads, critic_pcount_dict, prefix="critic")
     critic_effective_lr_dict = get_effective_lr(
-        critic_grad_norm_dict, critic_param_norm_dict, prefix="critic"
+        critic_gnorm_dict, critic_pnorm_dict, critic_pcount_dict, prefix="critic"
     )
     critic_metrics_info = {
         **get_dormant_ratio(critic_info, prefix="critic", tau=0.1),
         **get_dormant_ratio(critic_info, prefix="critic", tau=0.0),
         **get_feature_norm(critic_info, prefix="critic"),
         **get_rank(critic_info, prefix="critic"),
-        **get_scaler_stat(critic.params, prefix="critic"),
-        **critic_param_norm_dict,
-        **critic_grad_norm_dict,
+        **get_scaler_statistics(critic_params, prefix="critic"),
+        **critic_pnorm_dict,
+        **critic_gnorm_dict,
         **critic_effective_lr_dict,
     }
+    new_rng, dr3_info = get_critic_featdot(
+        rng=rng, actor=actor, critic=critic, batch=batch
+    )
 
+    # Target Critic
     _, target_critic_info = target_critic(
         observations=batch["observation"], actions=batch["action"]
     )
@@ -504,13 +520,8 @@ def _get_metrics_hyper_simba_dev_networks(
         **get_dormant_ratio(target_critic_info, prefix="target_critic", tau=0.0),
         **get_feature_norm(target_critic_info, prefix="target_critic"),
         **get_rank(target_critic_info, prefix="target_critic"),
-        **get_weight_norm(target_critic.params, prefix="target_critic"),
-        **get_scaler_stat(target_critic.params, prefix="target_critic"),
+        **get_scaler_statistics(target_critic_params, prefix="target_critic"),
     }
-
-    new_rng, dr3_info = get_critic_featdot(
-        rng=rng, actor=actor, critic=critic, batch=batch
-    )
 
     metrics_info = {
         **actor_metrics_info,
@@ -550,6 +561,19 @@ class HyperSimbaDevAgent(BaseAgent):
         self._cfg = HyperSimbaDevConfig(**cfg)
 
         self._init_network()
+
+        # to measure effective learning rate
+        self._actor_pcount_dict = get_num_parameters_dict(
+            self._actor.params, prefix="actor"
+        )
+
+        critic_param = self._critic.params
+        # taking off Vmap module
+        if self._cfg.critic_use_cdq:
+            ((_, critic_param),) = self._critic.params.items()
+        self._critic_pcount_dict = get_num_parameters_dict(
+            critic_param, prefix="critic"
+        )
 
     def _init_network(self):
         (
@@ -636,7 +660,10 @@ class HyperSimbaDevAgent(BaseAgent):
             rng=self._rng,
             actor=self._actor,
             critic=self._critic,
+            critic_use_cdq=self._cfg.critic_use_cdq,
             target_critic=self._target_critic,
+            actor_pcount_dict=self._actor_pcount_dict,
+            critic_pcount_dict=self._critic_pcount_dict,
             batch=batch,
             update_info=update_info,
         )

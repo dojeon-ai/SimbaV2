@@ -131,8 +131,9 @@ def update_critic(
         next_q, _ = target_critic(
             observations=batch["next_observation"],
             actions=next_actions,
-        ).reshape(-1)
-
+        )
+        next_q = next_q.reshape(-1)
+    
     # compute the td-target, incorporating the n-step accumulated reward
     # https://gymnasium.farama.org/tutorials/gymnasium_basics/handling_time_limits/
     target_q = batch["reward"] + (gamma**n_step) * (1 - batch["terminated"]) * next_q
@@ -160,7 +161,8 @@ def update_critic(
                 variables={"params": critic_params},
                 observations=batch["observation"],
                 actions=batch["action"],
-            ).reshape(-1)
+            )
+            pred_q = pred_q.reshape(-1)
             pred_q1 = pred_q2 = pred_q
 
             # compute mse loss

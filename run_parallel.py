@@ -28,7 +28,12 @@ def run_with_device(server, device_id, config_path, config_name, overrides):
     os.environ["OMP_NUM_THREADS"] = "2"
 
     # Now import the main script
-    from run import run
+    if config_name == "online_rl":
+        from run_online import run
+    elif config_name == "offline_rl":
+        from run_offline import run
+    else:
+        raise NotImplementedError
 
     args = {
         "config_path": config_path,
@@ -41,8 +46,8 @@ def run_with_device(server, device_id, config_path, config_name, overrides):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument("--config_path", type=str, default="./configs")
-    parser.add_argument("--config_name", type=str, default="base")
-    parser.add_argument("--agent_config", type=str, default="hyper_simba_dev")
+    parser.add_argument("--config_name", type=str, default="online_rl")
+    parser.add_argument("--agent_config", type=str, default="hyper_simba")
     parser.add_argument("--env_type", type=str, default="dmc_hard")
     parser.add_argument("--device_ids", default=[0], nargs="+")
     parser.add_argument("--num_seeds", type=int, default=1)
@@ -71,13 +76,23 @@ if __name__ == "__main__":
     agent_config = args.pop("agent_config")
 
     # import library after CUDA_VISIBLE_DEVICES operation
+    from scale_rl.envs.d4rl import D4RL_MUJOCO
     from scale_rl.envs.dmc import DMC_EASY_MEDIUM, DMC_HARD
     from scale_rl.envs.humanoid_bench import HB_LOCOMOTION_NOHAND
     from scale_rl.envs.mujoco import MUJOCO_ALL
     from scale_rl.envs.myosuite import MYOSUITE_TASKS
 
     env_type = args.pop("env_type")
-    if env_type == "mujoco":
+
+    ###################
+    # offline
+    if env_type == "d4rl_mujoco":
+        envs = D4RL_MUJOCO
+        env_configs = ["d4rl"] * len(envs)
+
+    ###################
+    # online
+    elif env_type == "mujoco":
         envs = MUJOCO_ALL
         env_configs = [env_type] * len(envs)
 
@@ -111,22 +126,6 @@ if __name__ == "__main__":
             + ["dmc"] * len(DMC_HARD)
             + ["myosuite"] * len(MYOSUITE_TASKS)
             + ["hb_locomotion"] * len(HB_LOCOMOTION_NOHAND)
-        )
-
-    elif env_type == "mujoco_myo_dmc_hard":
-        envs = MUJOCO_ALL + DMC_HARD + MYOSUITE_TASKS
-        env_configs = (
-            ["mujoco"] * len(MUJOCO_ALL)
-            + ["dmc"] * len(DMC_HARD)
-            + ["myosuite"] * len(MYOSUITE_TASKS)
-        )
-
-    elif env_type == "mujoco_dmc_em_dmc_hard":
-        envs = MUJOCO_ALL + DMC_EASY_MEDIUM + DMC_HARD
-        env_configs = (
-            ["mujoco"] * len(MUJOCO_ALL)
-            + ["dmc"] * len(DMC_EASY_MEDIUM)
-            + ["dmc"] * len(DMC_HARD)
         )
 
     elif env_type == "mini_benchmark":

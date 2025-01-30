@@ -102,7 +102,7 @@ class HyperResidualBlock(nn.Module):
             scaler_scale=self.scaler_scale,
             dtype=self.dtype,
         )
-        self.scaler = Scale(
+        self.alpha_scaler = Scale(
             self.hidden_dim,
             init=self.alpha_init,
             scale=self.alpha_scale,
@@ -111,7 +111,7 @@ class HyperResidualBlock(nn.Module):
     def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
         residual = x
         x = self.ff(x)
-        x = residual + self.scaler(x - residual)
+        x = residual + self.alpha_scaler(x - residual)
         x = l2normalize(x, axis=-1)
         return x
 

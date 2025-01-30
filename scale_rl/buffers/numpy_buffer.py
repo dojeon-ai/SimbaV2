@@ -136,10 +136,11 @@ class NpyUniformBuffer(BaseBuffer):
         else:
             return True
 
-    def sample(self) -> Batch:
-        sample_idxs = np.random.randint(
-            0, self._num_in_buffer, size=self._sample_batch_size
-        )
+    def sample(self, sample_idxs=None) -> Batch:
+        if sample_idxs is None:
+            sample_idxs = np.random.randint(
+                0, self._num_in_buffer, size=self._sample_batch_size
+            )
 
         # copy the data for safeness
         batch = {}

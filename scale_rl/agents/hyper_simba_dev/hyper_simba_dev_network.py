@@ -107,7 +107,7 @@ class HyperResidualBlock(nn.Module):
             scaler_scale=self.scaler_scale,
             dtype=self.dtype,
         )
-        self.scaler = Scale(
+        self.alpha_scaler = Scale(
             self.hidden_dim,
             init=self.alpha_init,
             scale=self.alpha_scale,
@@ -116,7 +116,7 @@ class HyperResidualBlock(nn.Module):
     def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
         residual = x
         x = self.ff(x)
-        x = residual + self.scaler(x - residual)
+        x = residual + self.alpha_scaler(x - residual)
         x = l2normalize(x, axis=-1)
         return x
 
@@ -137,7 +137,6 @@ class HyperEncoder(nn.Module):
     @nn.compact
     def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
         info = {}
-        layer_idx = 0
 
         if self.input_process_type == "project_linear_norm":
             x = project_to_hypersphere(
@@ -145,7 +144,7 @@ class HyperEncoder(nn.Module):
                 projection_type=self.input_projection_type,
                 constant=self.input_projection_constant,
             )
-            info[f"proj_in_{layer_idx}"] = x
+            info[f"encoder/projection_0"] = x
 
             x = HyperDense(
                 hidden_dim=self.hidden_dim,
@@ -154,8 +153,7 @@ class HyperEncoder(nn.Module):
             )(x)
 
             x = l2normalize(x, axis=-1)
-            info[f"proj_out_{layer_idx}"] = x
-            layer_idx += 1
+            info[f"encoder/HyperDense_0"] = x
 
         elif self.input_process_type == "linear_project":
             x = HyperDense(
@@ -163,15 +161,14 @@ class HyperEncoder(nn.Module):
                 dtype=self.dtype,
                 use_scaler=self.scale_input_dense,
             )(x)
-            info[f"proj_in_{layer_idx}"] = x
+            info[f"encoder/HyperDense_0"] = x
 
             x = project_to_hypersphere(
                 x=x,
                 projection_type=self.input_projection_type,
                 constant=self.input_projection_constant,
             )
-            info[f"proj_out_{layer_idx}"] = x
-            layer_idx += 1
+            info[f"encoder/projection_0"] = x
 
         elif self.input_process_type == "mlp_project":
             x = HyperDense(
@@ -179,7 +176,7 @@ class HyperEncoder(nn.Module):
                 dtype=self.dtype,
                 use_scaler=self.scale_input_dense,
             )(x)
-            info[f"proj_in_{layer_idx}"] = x
+            info[f"encoder/projection_0"] = x
 
             x = nn.relu(x) + 1e-5
             x = HyperDense(
@@ -193,12 +190,12 @@ class HyperEncoder(nn.Module):
                 projection_type=self.input_projection_type,
                 constant=self.input_projection_constant,
             )
-            info[f"proj_out_{layer_idx}"] = x
-            layer_idx += 1
+            info[f"encoder/HyperDense_0"] = x
 
         else:
             raise ValueError
 
+        layer_idx = 0
         for _ in range(self.num_blocks):
             x = HyperResidualBlock(
                 hidden_dim=self.hidden_dim,
@@ -208,7 +205,7 @@ class HyperEncoder(nn.Module):
                 alpha_scale=self.alpha_scale,
                 dtype=self.dtype,
             )(x)
-            info[f"res_block_{layer_idx}"] = x
+            info[f"encoder/HyperResidualBlock_{layer_idx}"] = x
             layer_idx += 1
 
         return x, info

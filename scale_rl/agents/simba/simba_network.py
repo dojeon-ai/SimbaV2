@@ -24,24 +24,22 @@ class SimbaEncoder(nn.Module):
     def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
         info = {}
         layer_idx = 0
-
         if self.block_type == "mlp":
             x = MLPBlock(self.hidden_dim, dtype=self.dtype)(x)
-            info[f"mlp_{layer_idx}"] = x
-            layer_idx += 1
+            info[f"encoder/MLPBlock_0"] = x
 
         elif self.block_type == "residual":
             x = nn.Dense(
                 self.hidden_dim, kernel_init=orthogonal_init(1), dtype=self.dtype
             )(x)
-            info[f"dense_{layer_idx}"] = x
-            layer_idx += 1
+            info[f"encoder/Dense_0"] = x
+
             for _ in range(self.num_blocks):
                 x = ResidualBlock(self.hidden_dim, dtype=self.dtype)(x)
-                info[f"res_block_{layer_idx}"] = x
+                info[f"encoder/ResidualBlock_{layer_idx}"] = x
                 layer_idx += 1
             x = nn.LayerNorm(dtype=self.dtype)(x)
-            info[f"outnorm_{layer_idx}"] = x
+            info[f"encoder/LayerNorm_0"] = x
 
         return x, info
 

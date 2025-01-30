@@ -27,6 +27,7 @@ actor_scaler_init: ${eval:'1 / math.sqrt(${agent.actor_hidden_dim})'}
 actor_scaler_scale: ${eval:'1 / math.sqrt(${agent.actor_hidden_dim})'}
 actor_alpha_init: ${eval:'1 / (${agent.actor_num_blocks} + 1)'}
 actor_alpha_scale: ${eval:'1 / math.sqrt(${agent.actor_hidden_dim})'}
+actor_bc_alpha: 0.0
 
 critic_use_cdq: ${env.episodic}
 critic_num_blocks: 2

@@ -57,6 +57,7 @@ class HyperSimbaConfig:
     actor_scaler_scale: float
     actor_alpha_init: float
     actor_alpha_scale: float
+    actor_bc_alpha: float
 
     critic_use_cdq: bool
     critic_num_blocks: int
@@ -230,6 +231,7 @@ def _sample_hyper_simba_actions(
         "critic_num_bins",
         "target_tau",
         "temp_target_entropy",
+        "actor_bc_alpha",
     ),
 )
 def _update_hyper_simba_networks(
@@ -241,6 +243,7 @@ def _update_hyper_simba_networks(
     batch: Batch,
     gamma: float,
     n_step: int,
+    actor_bc_alpha: float,
     critic_use_cdq: bool,
     critic_min_v: float,
     critic_max_v: float,
@@ -259,6 +262,7 @@ def _update_hyper_simba_networks(
         batch=batch,
         critic_use_cdq=critic_use_cdq,
         bin_values=critic_bin_values,
+        bc_alpha=actor_bc_alpha,
     )
 
     new_temperature, temperature_info = update_temperature(
@@ -387,6 +391,7 @@ class HyperSimbaAgent(BaseAgent):
             critic_bin_values=self._bin_values,
             target_tau=self._cfg.target_tau,
             temp_target_entropy=self._cfg.temp_target_entropy,
+            actor_bc_alpha=self._cfg.actor_bc_alpha,
         )
 
         for key, value in update_info.items():

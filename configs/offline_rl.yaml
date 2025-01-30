@@ -1,0 +1,35 @@
+##################################################################################
+# Common
+##################################################################################
+
+project_name: 'HyperSimba_offline'
+entity_name: 'draftrec'
+group_name: 'test'
+exp_name: 'test'
+seed: 0
+server: 'local'
+
+##################################################################################
+# Training
+##################################################################################
+
+# gamma value is set with a heuristic from TD-MPCv2
+eff_episode_len: ${eval:'${env.max_episode_steps} / ${env.action_repeat}'}
+gamma: ${eval:'max(min((${eff_episode_len} / 5 - 1) / (${eff_episode_len} / 5), 0.995), 0.95)'}
+n_step: 1
+
+num_epochs: 100
+num_interaction_steps: null              # update steps
+updates_per_interaction_step: 1          # fixed
+evaluation_per_interaction_step: 50_000  # evaluation frequency per interaction step.
+metrics_per_interaction_step: 50_000     # log metrics per interaction step.
+recording_per_interaction_step: -1       # recording is not supported for offline rl yet.
+logging_per_interaction_step: 10_000     # logging frequency per interaction step.
+num_eval_episodes: 100
+num_record_episodes: 1
+
+defaults:
+- _self_
+- agent: hyper_simba_bc
+- buffer: numpy_uniform
+- env: d4rl

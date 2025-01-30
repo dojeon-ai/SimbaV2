@@ -47,6 +47,7 @@ def update_actor(
     batch: Batch,
     bin_values: jnp.ndarray,
     critic_use_cdq: bool,
+    bc_alpha: float,
 ) -> Tuple[Trainer, Dict[str, float]]:
     def actor_loss_fn(
         actor_params: flax.core.FrozenDict[str, Any],
@@ -73,6 +74,13 @@ def update_actor(
             q = compute_categorical_value(q_log_probs, bin_values)
 
         actor_loss = (log_probs * temperature() - q).mean()
+
+        if bc_alpha > 0:
+            # https://arxiv.org/abs/2306.02451
+            q_abs = jax.lax.stop_gradient(jnp.abs(q).mean())
+            bc_loss = ((actions - batch["action"]) ** 2).mean()
+            actor_loss = actor_loss + bc_alpha * q_abs * bc_loss
+
         actor_info = {
             "actor/loss": actor_loss,
             "actor/entropy": -log_probs.mean(),
@@ -125,6 +133,8 @@ def update_critic(
     def critic_loss_fn(
         critic_params: flax.core.FrozenDict[str, Any],
     ) -> Tuple[jnp.ndarray, Dict[str, float]]:
+        entropy = (temperature() * next_log_probs).reshape((-1, 1))
+
         # compute predicted q-value
         if critic_use_cdq:
             (pred_log_probs_1, pred_log_probs_2), _ = critic.apply(
@@ -139,7 +149,7 @@ def update_critic(
                 reward=batch["reward"].reshape((-1, 1)),
                 done=batch["terminated"].reshape((-1, 1)),
                 target_log_probs=next_q_log_probs,
-                entropy=(temperature() * next_log_probs).reshape((-1, 1)),
+                entropy=entropy,
                 bin_values=bin_values,
                 num_bins=num_bins,
                 min_v=min_v,
@@ -151,7 +161,7 @@ def update_critic(
                 reward=batch["reward"].reshape((-1, 1)),
                 done=batch["terminated"].reshape((-1, 1)),
                 target_log_probs=next_q_log_probs,
-                entropy=(temperature() * next_log_probs).reshape((-1, 1)),
+                entropy=entropy,
                 bin_values=bin_values,
                 num_bins=num_bins,
                 min_v=min_v,
@@ -172,7 +182,7 @@ def update_critic(
                 reward=batch["reward"].reshape((-1, 1)),
                 done=batch["terminated"].reshape((-1, 1)),
                 target_log_probs=next_q_log_probs,
-                entropy=(temperature() * next_log_probs).reshape((-1, 1)),
+                entropy=entropy,
                 bin_values=bin_values,
                 num_bins=num_bins,
                 min_v=min_v,

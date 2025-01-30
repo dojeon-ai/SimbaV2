@@ -73,6 +73,14 @@ HB_LOCOMOTION_NOHAND = [
     "h1-pole-v0",
 ]
 
+HB_LOCOMOTION_NOHAND_MINI = [
+    "h1-walk-v0",
+    "h1-run-v0",
+    "h1-sit_hard-v0",
+    "h1-balance_simple-v0",
+    "h1-stair-v0",
+]
+
 HB_LOCOMOTION_NOHAND_SEQUENTIAL = [
     "h1-stand-v0",
     "h1-sit_simple-v0",

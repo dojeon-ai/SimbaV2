@@ -1,0 +1,17 @@
+##################################################################################
+# D4RL
+##################################################################################
+
+env_type: 'd4rl'
+env_name: 'hopper-medium-replay-v2'
+num_env_steps: null
+episodic: true
+
+seed: ${seed}
+num_train_envs: 1
+num_eval_envs: 1
+no_termination: false
+action_repeat: 1
+rescale_action: true
+reward_scale: 1
+max_episode_steps: 1000

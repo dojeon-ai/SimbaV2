@@ -156,7 +156,6 @@ class Trainer:
             grads, info = grad_fn(self.params)
             dynamic_scale = None
             is_fin = True
-
         # grad_norm = tree_norm(grads)
         # info["grad_norm"] = grad_norm
         info["_grads"] = grads

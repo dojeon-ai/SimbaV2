@@ -411,21 +411,19 @@ class VectorObservationWrapper(VectorEnvWrapper):
     Equivalent to :class:`gymnasium.ObservationWrapper` for vectorized environments.
     """
 
-    def reset(
+    def reset_wait(
         self,
         *,
         seed: Optional[Union[int, List[int]]] = None,
         options: Optional[dict] = None,
     ) -> tuple[NDArray[Any], dict[str, Any]]:
         """Modifies the observation returned from the environment ``reset`` using the :meth:`observation`."""
-        observations, infos = self.env.reset(seed=seed, options=options)
+        observations, infos = self.env.reset_wait(seed=seed, options=options)
         return self.observations(observations), infos
 
-    def step(
-        self, actions: NDArray[Any]
-    ) -> Tuple[Any, NDArray[Any], NDArray[Any], NDArray[Any], dict]:
+    def step_wait(self):
         """Modifies the observation returned from the environment ``step`` using the :meth:`observation`."""
-        observations, rewards, terminations, truncations, infos = self.env.step(actions)
+        observations, rewards, terminations, truncations, infos = self.env.step_wait()
         return (
             self.observations(observations),
             rewards,

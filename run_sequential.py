@@ -30,7 +30,7 @@ def run_with_device(server, device_id, config_path, config_name, overrides):
     os.environ["WANDB_START_METHOD"] = "thread"
 
     # Now import the main script
-    from run import run
+    from run_online import run
 
     args = {
         "config_path": config_path,
@@ -48,7 +48,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument("--config_path", type=str, default="./configs")
-    parser.add_argument("--config_name", type=str, default="base")
+    parser.add_argument("--config_name", type=str, default="online_rl")
     parser.add_argument("--agent_config", type=str, default="hyper_simba_dev")
     parser.add_argument("--env_type", type=str, default="acrobot_continual")
     parser.add_argument("--device_ids", default=[0], nargs="+")

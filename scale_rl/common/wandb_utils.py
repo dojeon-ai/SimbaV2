@@ -1,7 +1,7 @@
+import os
 from collections import defaultdict
 from typing import Dict, List, Optional
 
-import os
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -178,13 +178,15 @@ def read_and_concatenate_eval_df(directory_path):
         file_path = os.path.join(directory_path, file_name)
 
         # Check if the file is a CSV file
-        if file_name.endswith('.csv'):
+        if file_name.endswith(".csv"):
             # Read the file
             try:
                 file_df = pd.read_csv(file_path, index_col=0)
-                
+
                 # Append to the concatenated DataFrame
-                concatenated_df = pd.concat([concatenated_df, file_df], ignore_index=True)
+                concatenated_df = pd.concat(
+                    [concatenated_df, file_df], ignore_index=True
+                )
             except Exception as e:
                 print(f"Error reading {file_path}: {e}")
 
@@ -204,11 +206,11 @@ def save_eval_df(eval_df, directory_path):
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)
 
-    for exp_name in eval_df['exp_name'].unique():
-        _eval_df = eval_df[eval_df['exp_name'] == exp_name].reset_index(drop=True)
+    for exp_name in eval_df["exp_name"].unique():
+        _eval_df = eval_df[eval_df["exp_name"] == exp_name].reset_index(drop=True)
         file_path = os.path.join(directory_path, f"{exp_name}.csv")
         _eval_df.to_csv(file_path)
-        
+
 
 def plot_metric_history_per_env(
     eval_df,
