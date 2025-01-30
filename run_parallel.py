@@ -15,17 +15,17 @@ def run_with_device(server, device_id, config_path, config_name, overrides):
             1: 2,
             2: 1,
             3: 0,
-            4: 7,
+            4: 6, # 7,
             5: 6,
-            6: 5,
+            6: 4, # 5,
             7: 4,
         }
         os.environ["MUJOCO_EGL_DEVICE_ID"] = str(cuda_id_to_egl_id[int(device_id)])
     else:
         os.environ["MUJOCO_EGL_DEVICE_ID"] = str(0)
 
-    os.environ["MUJOCO_EGL_DEVICE_ID"] = str(0)
     os.environ["OMP_NUM_THREADS"] = "2"
+    
 
     # Now import the main script
     if config_name == "online_rl":
@@ -128,47 +128,97 @@ if __name__ == "__main__":
             + ["hb_locomotion"] * len(HB_LOCOMOTION_NOHAND)
         )
 
-    elif env_type == "mini_benchmark":
-        mujoco_envs = [
-            "HalfCheetah-v4",
-            "Humanoid-v4",
-        ]
-
-        dmc_em_envs = [
-            "acrobot-swingup",
-            "cartpole-swingup_sparse",
-            "cheetah-run",
-            "finger-spin",
-        ]
-
-        dmc_hard_envs = [
-            "dog-run",
-            "dog-trot",
-            "humanoid-stand",
-            "humanoid-walk",
-        ]
-
-        myo_envs = [
-            "myo-key-turn-hard",
-            "myo-pen-twirl-hard",
-        ]
-
-        hb_envs = [
-            "h1-balance_simple-v0",
-            "h1-run-v0",
-            "h1-stair-v0",
-            "h1-stand-v0",
-        ]
-
-        envs = mujoco_envs + dmc_em_envs + dmc_hard_envs + myo_envs + hb_envs
+    elif env_type == "rr_exp":
+        envs = (
+            DMC_EASY_MEDIUM
+            + DMC_HARD
+            + MYOSUITE_TASKS
+            + HB_LOCOMOTION_NOHAND
+        )
         env_configs = (
-            ["mujoco"] * len(mujoco_envs)
-            + ["dmc"] * len(dmc_em_envs)
-            + ["dmc"] * len(dmc_hard_envs)
-            + ["myosuite"] * len(myo_envs)
-            + ["hb_locomotion"] * len(hb_envs)
+            ["dmc"] * len(DMC_EASY_MEDIUM)
+            + ["dmc"] * len(DMC_HARD)
+            + ["myosuite"] * len(MYOSUITE_TASKS)
+        )
+    
+    elif env_type == "mujoco_myo_dmc_hard":
+        envs = MUJOCO_ALL + DMC_HARD + MYOSUITE_TASKS
+        env_configs = (
+            ["mujoco"] * len(MUJOCO_ALL)
+            + ["dmc"] * len(DMC_HARD)
+            + ["myosuite"] * len(MYOSUITE_TASKS)
         )
 
+    elif env_type == "mujoco_dmc_em_dmc_hard":
+        envs = MUJOCO_ALL + DMC_EASY_MEDIUM + DMC_HARD
+        env_configs = (
+            ["mujoco"] * len(MUJOCO_ALL)
+            + ["dmc"] * len(DMC_EASY_MEDIUM)
+            + ["dmc"] * len(DMC_HARD)
+        )
+    elif env_type == "rr4":
+        envs = DMC_EASY_MEDIUM + DMC_HARD + MYOSUITE_TASKS
+        env_configs = (
+            ["dmc"] * len(DMC_EASY_MEDIUM)
+            + ["dmc"] * len(DMC_HARD)
+            + ["myosuite"] * len(MYOSUITE_TASKS)
+        )
+
+    elif env_type == "mini_benchmark":
+        hb_envs = [
+            "h1-walk-v0",
+            "h1-run-v0",
+            "h1-sit_hard-v0",
+            "h1-balance_simple-v0",
+            "h1-stair-v0",
+        ]
+
+        envs = hb_envs
+        env_configs = (
+            ["hb_locomotion"] * len(hb_envs)
+        )
+    elif env_type == "easy":
+        envs = (
+            MUJOCO_ALL
+            + DMC_EASY_MEDIUM
+        )
+        env_configs = (
+            ["mujoco"] * len(MUJOCO_ALL)
+            + ["dmc"] * len(DMC_EASY_MEDIUM)
+        )
+    elif env_type == "easy_medium":
+        envs = (
+            MUJOCO_ALL
+            + DMC_EASY_MEDIUM
+            + DMC_HARD
+        )
+        env_configs = (
+            ["mujoco"] * len(MUJOCO_ALL)
+            + ["dmc"] * len(DMC_EASY_MEDIUM)
+            + ["dmc"] * len(DMC_HARD)
+        )
+    elif env_type == "hard":
+        envs = (
+            MYOSUITE_TASKS
+            + HB_LOCOMOTION_NOHAND
+        )
+        env_configs = (
+            ["myosuite"] * len(MYOSUITE_TASKS)
+            + ["hb_locomotion"] * len(HB_LOCOMOTION_NOHAND)
+        )
+    elif env_type == "debug":
+        envs = (
+            MUJOCO_ALL
+            + DMC_EASY_MEDIUM
+            + MYOSUITE_TASKS
+            + HB_LOCOMOTION_NOHAND
+        )
+        env_configs = (
+            ["mujoco"] * len(MUJOCO_ALL)
+            + ["dmc"] * len(DMC_EASY_MEDIUM)
+            + ["myosuite"] * len(MYOSUITE_TASKS)
+            + ["hb_locomotion"] * len(HB_LOCOMOTION_NOHAND)
+        )
     else:
         raise NotImplementedError
 

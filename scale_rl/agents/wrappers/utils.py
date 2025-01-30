@@ -8,7 +8,6 @@ import numpy as np
 
 class RunningMeanStd:
     """Tracks the mean, variance and count of values."""
-
     # https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Parallel_algorithm
     def __init__(self, epsilon=1e-4, shape=(), dtype=np.float32):
         """Tracks the mean, variance and count of values."""

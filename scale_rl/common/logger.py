@@ -14,6 +14,8 @@ class WandbTrainerLogger(object):
             project=cfg.project_name,
             entity=cfg.entity_name,
             group=cfg.group_name,
+            # TODO: remove it for hojoon
+            name=cfg.exp_name + f'_{cfg.env.env_name}',
             config=dict_cfg,
         )
 
