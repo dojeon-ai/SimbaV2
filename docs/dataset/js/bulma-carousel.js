@@ -1036,6 +1036,7 @@ var defaultOptions = {
 	autoplaySpeed: 3000
 };
 
+
 var Autoplay = function (_EventEmitter) {
 	_inherits(Autoplay, _EventEmitter);
 

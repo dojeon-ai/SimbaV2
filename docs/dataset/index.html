@@ -38,7 +38,7 @@
 			<a href="../">Home</a>
 		</div>
 		<div class="header-menu-item noselect">
-			<a href="https://github.com/nicklashansen/simbav2">Code</a>
+			<a href="https://github.com/dojeon-ai/SimbaV2">Code</a>
 		</div>
 		<div class="header-menu-item noselect">
 			<a href="." class="disabled">Dataset</a>
@@ -51,11 +51,18 @@
 		<h2>Dataset</h2>
 		<div class="figure-caption">
 			<p>
-				We open-source all data corresponding to the 80-task and 30-task datasets used in our multi-task experiments. They can be downloaded below. The two datasets contain 545M and 345M transitions, respectively.
+				We're open-sourcing $57$-task datasets from the <span class="bold simbav2">SimbaV2</span> agent's replay buffers, available for download below. We hope this release encourages other research groups to share their datasets and checkpoints, driving collaboration and progress.
 			</p>
 		</div>
+		<div style="width: 100%; margin: auto; text-align: center; padding-top: 8px; font-size: 1.2em;">
+			<span class="bold">Click to Download:</span><br class="break"/>
+		</div><br>
 		<div class="links">
-			<span class="bold">Download:</span><a href="https://huggingface.co/datasets/nicklashansen/simbav2" class="btn btn-blue">All</a><a href="https://huggingface.co/datasets/nicklashansen/simbav2/tree/main/mt80" class="btn">80 tasks</a><a href="https://huggingface.co/datasets/nicklashansen/simbav2/tree/main/mt30" class="btn">30 tasks</a>
+			<a href="https://huggingface.co/datasets/joonleesky/simbaV2" class="btn btn-blue">🤗 Hugging Face</a>
+			<a href="https://huggingface.co/datasets/joonleesky/simbaV2/blob/main/mujoco.pickle" class="btn ">MuJoCo (5 tasks)</a>
+			<a href="https://huggingface.co/datasets/joonleesky/simbaV2/blob/main/dmc.pickle" class="btn ">DMControl (28 tasks)</a><br class="break"/>
+			<a href="https://huggingface.co/datasets/joonleesky/simbaV2/blob/main/myosuite.pickle" class="btn ">MyoSuite (10 tasks)</a>
+			<a href="https://huggingface.co/datasets/joonleesky/simbaV2/blob/main/hbench.pickle" class="btn ">HumanoidBench (14 tasks)</a>
 		</div>
 	</div>
 	<div class="hr"></div>
@@ -63,7 +70,7 @@
 		<h2>Overview</h2>
 		<div class="figure-caption">
 			<p>
-				We release two multi-task datasets with data from <span class="bold">80</span> and <span class="bold">30</span> tasks, respectively. The datasets are summarized below.
+				We release a total of $57$ single-task expert datasets with transition data from the replay buffers of single-task <span class="bold simbav2">SimbaV2</span> agents. The domains consist of <span class="bold">MuJoCo (5)</span>, <span class="bold">DMControl (28)</span>, <span class="bold">MyoSuite (10)</span>, and <span class="bold">HumanoidBench (14)</span>, encompassing a variety of locomotion and manipulation tasks with varying levels of complexity. The dataset details are summarized below. 
 			</p>
 		</div>
 		<table class="models" style="min-width: 1em;">
@@ -89,19 +96,19 @@
 						5
 					</td>
 					<td style="font-size: 0.8em;">
-						4
+						5
 					</td>
 					<td style="font-size: 0.8em;">
 						690k
 					</td>
 					<td style="font-size: 0.8em;">
-						345M
+						171M
 					</td>
 					<td style="font-size: 0.8em;">
-						20GB
+						11.4GB
 					</td>
 					<td>
-						<a href="https://huggingface.co/datasets/nicklashansen/simbav2/tree/main/mt30"><i class="fa fa-download" style="font-size: 1em;"></i></a>
+						<a href="https://huggingface.co/datasets/joonleesky/simbaV2/blob/main/mujoco.pickle"><i class="fa fa-download" style="font-size: 1em;"></i></a>
 					</td>
 				</tr>
 				<tr class="models">
@@ -116,19 +123,19 @@
 						28
 					</td>
 					<td style="font-size: 0.8em;">
-						11
+						13
 					</td>
 					<td style="font-size: 0.8em;">
 						690k
 					</td>
 					<td style="font-size: 0.8em;">
-						345M
+						171M
 					</td>
 					<td style="font-size: 0.8em;">
 						20GB
 					</td>
 					<td>
-						<a href="https://huggingface.co/datasets/nicklashansen/simbav2/tree/main/mt30"><i class="fa fa-download" style="font-size: 1em;"></i></a>
+						<a href="https://huggingface.co/datasets/joonleesky/simbaV2/blob/main/dmc.pickle"><i class="fa fa-download" style="font-size: 1em;"></i></a>
 					</td>
 				</tr>
 				<tr class="models">
@@ -149,13 +156,13 @@
 						690k
 					</td>
 					<td style="font-size: 0.8em;">
-						345M
+						171M
 					</td>
 					<td style="font-size: 0.8em;">
-						20GB
+						14.3GB
 					</td>
 					<td>
-						<a href="https://huggingface.co/datasets/nicklashansen/simbav2/tree/main/mt30"><i class="fa fa-download" style="font-size: 1em;"></i></a>
+						<a href="https://huggingface.co/datasets/joonleesky/simbaV2/blob/main/myosuite.pickle"><i class="fa fa-download" style="font-size: 1em;"></i></a>
 					</td>
 				</tr>
 				<tr class="models">
@@ -176,29 +183,24 @@
 						690k
 					</td>
 					<td style="font-size: 0.8em;">
-						345M
+						171M
 					</td>
 					<td style="font-size: 0.8em;">
-						20GB
+						11.1GB
 					</td>
 					<td>
-						<a href="https://huggingface.co/datasets/nicklashansen/simbav2/tree/main/mt30"><i class="fa fa-download" style="font-size: 1em;"></i></a>
+						<a href="https://huggingface.co/datasets/joonleesky/simbaV2/blob/main/hbench.pickle"><i class="fa fa-download" style="font-size: 1em;"></i></a>
 					</td>
 				</tr>
 			</tbody>
 		</table>
-		<div class="figure-caption">
-			<p>
-				These datasets are obtained from the replay buffers of <span class="bold">240</span> single-task <span class="bold simbav2">SimbaV2</span> agents, and thus contain a wide variety of behaviors ranging from random to expert policies. Multi-task agents trained on the above datasets, as well as checkpoints for each of the single-task agents, are available <a href="https://www.simbav2.com/models">here</a>.
-			</p>
-		</div>
 	</div>
 	<div class="hr"></div>
 	<div>
 		<h2>Tasks</h2>
 		<div class="figure-caption">
 			<p>
-				We list all 57 tasks in the dataset below, along with <span class="bold simbav2">SimbaV2</span> policy visualizations and summary statistics.
+				We list all $57$ tasks in the dataset below, along with <span class="bold simbav2">SimbaV2</span> policy visualizations and: summary statistics.
 			</p>
 		</div>
 		<!-- Mujoco Videos -->
@@ -248,7 +250,7 @@
 		<!-- MuJoCo Table -->
 		<div class="wrap-collabsible">
 			<input id="collapsible-mujoco" class="toggle" type="checkbox">
-			<label for="collapsible-mujoco" class="lbl-toggle" style="font-size: min(1.2em, 4.5vw);">MuJoCo Full List ($5$ tasks)</label>
+			<label for="collapsible-mujoco" class="lbl-toggle" style="font-size: min(1.2em, 4.5vw);">MuJoCo: Summary Statistics ($5$ tasks)</label>
 			<div class="collapsible-mujoco-content">
 			  	<div class="content-inner">
 					<table class="models">
@@ -552,7 +554,7 @@
 		<!-- DMC Table -->
 		<div class="wrap-collabsible">
 			<input id="collapsible-dmc" class="toggle" type="checkbox">
-			<label for="collapsible-dmc" class="lbl-toggle" style="font-size: min(1.2em, 4.5vw);">Deepmind Control Suite Full List ($28$ tasks)</label>
+			<label for="collapsible-dmc" class="lbl-toggle" style="font-size: min(1.2em, 4.5vw);">DMControl: Summary Statistics ($28$ tasks)</label>
 			<div class="collapsible-dmc-content">
 				<div class="content-inner">
 					<table class="models">
@@ -1098,7 +1100,7 @@
 		<!-- MyoSuite Table -->
 		<div class="wrap-collabsible">
 			<input id="collapsible-myosuite" class="toggle" type="checkbox">
-			<label for="collapsible-myosuite" class="lbl-toggle" style="font-size: min(1.2em, 4.5vw);">MyoSuite Full List ($10$ tasks)</label>
+			<label for="collapsible-myosuite" class="lbl-toggle" style="font-size: min(1.2em, 4.5vw);">MyoSuite: Summary Statistics ($10$ tasks)</label>
 			<div class="collapsible-myosuite-content">
 				<div class="content-inner">
 					<table class="models">
@@ -1384,7 +1386,7 @@
 		<!-- HBench Table -->
 		<div class="wrap-collabsible">
 			<input id="collapsible-hbench" class="toggle" type="checkbox">
-			<label for="collapsible-hbench" class="lbl-toggle" style="font-size: min(1.2em, 4.5vw);">HumanoidBench Full List ($14$ tasks)</label>
+			<label for="collapsible-hbench" class="lbl-toggle" style="font-size: min(1.2em, 4.5vw);">HumanoidBench: Summary Statistics ($14$ tasks)</label>
 			<div class="collapsible-hbench-content">
 				<div class="content-inner">
 					<table class="models">

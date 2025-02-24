@@ -1,3 +1,21 @@
+.bibtex-container{
+    flex-grow:1;
+    margin:0 auto
+    ;position:relative;
+    width:auto
+}
+
+.bibtex pre{
+    -webkit-overflow-scrolling: touch;
+    overflow-x:auto;
+    padding:1.25em 1.5em;
+    white-space:pre;
+    word-wrap:normal;
+    font-family: "Courier", monospace;
+    background-color: #f4f4f4; 
+    text-align: left;
+}
+
 .hero{
     align-items:stretch;
     display:flex;
@@ -8,6 +26,8 @@
 .hero.is-light{
     color:rgba(0,0,0,.7)
 }
+
+
 
 
     
