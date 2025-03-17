@@ -23,8 +23,9 @@ class SimbaActor(nn.Module):
         )
         self.encoder = nn.Sequential(
             [
-                PreLNResidualBlock(hidden_dim=self.hidden_dim)
-                for _ in range(self.num_blocks)
+                *[PreLNResidualBlock(hidden_dim=self.hidden_dim) 
+                  for _ in range(self.num_blocks)], 
+                nn.LayerNorm(),
             ]
         )
         self.predictor = NormalTanhPolicy(self.action_dim)
@@ -51,8 +52,9 @@ class SimbaCritic(nn.Module):
         )
         self.encoder = nn.Sequential(
             [
-                PreLNResidualBlock(hidden_dim=self.hidden_dim)
-                for _ in range(self.num_blocks)
+                *[PreLNResidualBlock(hidden_dim=self.hidden_dim) 
+                  for _ in range(self.num_blocks)], 
+                nn.LayerNorm(),
             ]
         )
         self.predictor = LinearCritic()
