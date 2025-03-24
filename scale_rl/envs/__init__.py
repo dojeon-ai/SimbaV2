@@ -8,7 +8,7 @@ from scale_rl.envs.mujoco import make_mujoco_env
 from scale_rl.envs.humanoid_bench import make_humanoid_env
 from scale_rl.envs.myosuite import make_myosuite_env
 from scale_rl.envs.kitchen import make_kitchen_env
-from scale_rl.envs.d4rl import make_d4rl_env, make_d4rl_dataset, get_d4rl_normalized_score
+# from scale_rl.envs.d4rl import make_d4rl_env, make_d4rl_dataset, get_d4rl_normalized_score
 
 from scale_rl.envs.wrappers import RepeatAction, ScaleReward, DoNotTerminate
 from scale_rl.envs.wrappers.vector import AsyncVectorEnv, SyncVectorEnv, VectorEnv, FlattenObservation
