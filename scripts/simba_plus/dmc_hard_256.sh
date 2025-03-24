@@ -1,0 +1,12 @@
+python run_parallel_1000.py \
+    --group_name simba_plus_scaling \
+    --exp_name simba+_critic_width_256 \
+    --agent_config simba_plus \
+    --env_type crashed \
+    --device_ids 0 \
+    --num_seeds 1 \
+    --num_exp_per_device 1 \
+    --server kaist \
+    --overrides project_name='Simba_2501' \
+    --overrides updates_per_interaction_step=2 \
+    --overrides agent.critic_hidden_dim=256 \

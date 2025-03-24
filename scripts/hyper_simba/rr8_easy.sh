@@ -1,0 +1,11 @@
+python run_parallel.py \
+    --group_name simba_rr8 \
+    --exp_name simba_rr8 \
+    --agent_config simba \
+    --env_type dmc_em \
+    --device_ids 4 5 6 7 \
+    --num_seeds 5 \
+    --num_exp_per_device 8 \
+    --server kaist \
+    --overrides project_name='Simba_2501' \
+    --overrides updates_per_interaction_step=8 \

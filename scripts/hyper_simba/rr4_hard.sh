@@ -1,0 +1,11 @@
+python run_parallel.py \
+    --group_name hypersimba_rr8 \
+    --exp_name hypersimba_rr8 \
+    --agent_config hyper_simba \
+    --env_type hard \
+    --device_ids 0 1 2 3 \
+    --num_seeds 5 \
+    --num_exp_per_device 6 \
+    --server kaist \
+    --overrides project_name='Simba_2501' \
+    --overrides updates_per_interaction_step=4 \

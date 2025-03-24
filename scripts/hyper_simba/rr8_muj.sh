@@ -1,0 +1,11 @@
+python run_parallel.py \
+    --group_name simba_rr8 \
+    --exp_name simba_rr8 \
+    --agent_config simba \
+    --env_type mujoco \
+    --device_ids 3 2 1 0 \
+    --num_seeds 5 \
+    --num_exp_per_device 7 \
+    --server kaist \
+    --overrides project_name='Simba_2501' \
+    --overrides updates_per_interaction_step=4 \

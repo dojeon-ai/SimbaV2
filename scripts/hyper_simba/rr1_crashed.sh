@@ -1,0 +1,11 @@
+python run_parallel_4000.py \
+    --group_name hypersimba_rr1 \
+    --exp_name hypersimba_rr1 \
+    --agent_config hyper_simba \
+    --env_type debug \
+    --device_ids 0 \
+    --num_seeds 1 \
+    --num_exp_per_device 1 \
+    --server kaist \
+    --overrides project_name='Simba_2501' \
+    --overrides updates_per_interaction_step=0.5 \

@@ -1,0 +1,12 @@
+python run_parallel_0.py \
+    --group_name simba_hb_scaling \
+    --exp_name simba_critic_width_1024 \
+    --agent_config simba \
+    --env_type mini_benchmark \
+    --device_ids 4 5 6 7 \
+    --num_seeds 1 \
+    --num_exp_per_device 3 \
+    --server kaist \
+    --overrides project_name='Simba_2501' \
+    --overrides updates_per_interaction_step=2 \
+    --overrides agent.critic_hidden_dim=1024 \

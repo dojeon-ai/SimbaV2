@@ -1,0 +1,11 @@
+python run_parallel_4000.py \
+    --group_name simba_rr1 \
+    --exp_name simba_rr1 \
+    --agent_config simba \
+    --env_type crashed2 \
+    --device_ids 0 1 2 3 \
+    --num_seeds 1 \
+    --num_exp_per_device 8 \
+    --server kaist \
+    --overrides project_name='Simba_2501' \
+    --overrides updates_per_interaction_step=1 \
